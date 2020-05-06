@@ -16,6 +16,7 @@ ra_db = { path = "../rust-analyzer/crates/ra_db" }
 ra_ide_db = { path = "../rust-analyzer/crates/ra_ide_db" }
 ra_syntax = { path = "../rust-analyzer/crates/ra_syntax" }
 ra_hir = { path = "../rust-analyzer/crates/ra_hir" }
+ra_text_edit = { path = "../rust-analyzer/crates/ra_text_edit" }
 
 [[bin]]
 name = "cargo-up"
