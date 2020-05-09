@@ -1,0 +1,14 @@
+[package]
+name = "cargo-up-derive"
+version = "0.0.0"
+authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
+edition = "2018"
+description = "Upgrade your dependencies by automatically fixing your code"
+repository = "https://github.com/pksunkara/cargo-up"
+readme = "README.md"
+license = "MIT"
+
+[lib]
+proc-macro = true
+
+[dependencies]

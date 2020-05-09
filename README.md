@@ -2,6 +2,8 @@
 
 Upgrade your dependencies by automatically fixing your code
 
+**Dont be afraid to upgrade**
+
 ## Workflow
 
 Assuming we have a project with the following `Cargo.toml`

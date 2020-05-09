@@ -1,0 +1,14 @@
+[package]
+name = "rust-up"
+version = "0.0.0"
+authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
+edition = "2018"
+description = "Automatic updater for rust"
+repository = "https://github.com/pksunkara/cargo-up"
+readme = "README.md"
+license = "MIT"
+
+[dependencies]
+
+[package.metadata.workspaces]
+independent = true
