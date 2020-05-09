@@ -1,6 +1,6 @@
 [package]
 name = "cargo-up-derive"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
 edition = "2018"
 description = "Upgrade your dependencies by automatically fixing your code"
