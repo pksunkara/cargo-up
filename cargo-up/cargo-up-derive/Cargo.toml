@@ -9,5 +9,13 @@ license = "MIT"
 
 [lib]
 proc-macro = true
+bench = false
 
 [dependencies]
+syn = { version = "1", features = ["full"] }
+quote = "1"
+proc-macro2 = "1"
+proc-macro-error = "0.4.9"
+
+[dev-dependencies]
+cargo-up = { path = ".." }

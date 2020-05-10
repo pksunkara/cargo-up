@@ -8,6 +8,7 @@ repository = "https://github.com/pksunkara/cargo-up"
 license = "MIT"
 
 [dependencies]
+cargo-up = { path = "..", version = "0.0.1" }
 
 [package.metadata.workspaces]
 independent = true

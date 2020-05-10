@@ -9,36 +9,51 @@ license = "MIT"
 
 [[bin]]
 name = "cargo-up"
-path = "src/main.rs"
+path = "src/cli/main.rs"
 required-features = ["build-binary"]
+default-features = false
 
 [lib]
 name = "cargo_up"
-path = "src/lib.rs"
+path = "src/lib/mod.rs"
 
 [dependencies]
-clap = { version = "=3.0.0-beta.1", optional = true }
+# required by lib and bin
 log = "0.4"
-env_logger = "0.7"
 cargo_metadata = "0.9"
-# rust-analyzer = { path = "../../rust-analyzer/crates/rust-analyzer" }
-# ra_db = { path = "../../rust-analyzer/crates/ra_db" }
-# ra_ide_db = { path = "../../rust-analyzer/crates/ra_ide_db" }
-# ra_syntax = { path = "../../rust-analyzer/crates/ra_syntax" }
-# ra_hir = { path = "../../rust-analyzer/crates/ra_hir" }
-# ra_text_edit = { path = "../../rust-analyzer/crates/ra_text_edit" }
+cargo-up-utils = { path = "./cargo-up-utils", version = "0.0.0" }
+
+# ????
+rust-analyzer = { path = "../../rust-analyzer/crates/rust-analyzer" }
+ra_db = { path = "../../rust-analyzer/crates/ra_db" }
+
+# required by lib
+cargo-up-derive = { path = "./cargo-up-derive", version = "0.0.1", optional = true }
+ra_ide_db = { path = "../../rust-analyzer/crates/ra_ide_db", optional = true }
+ra_syntax = { path = "../../rust-analyzer/crates/ra_syntax", optional = true }
+ra_hir = { path = "../../rust-analyzer/crates/ra_hir", optional = true }
+ra_text_edit = { path = "../../rust-analyzer/crates/ra_text_edit", optional = true }
+
+# required by bin
+clap = { version = "=3.0.0-beta.1", optional = true }
+env_logger = { version = "0.7", optional = true }
+lazy_static = { version = "1.4", optional = true }
+console = { version = "0.11", optional = true }
 
 [profile.release]
 lto = "thin"
 
 [features]
-default = []
-build-binary = ["clap"]
+default = ["build-lib"]
+build-lib = ["cargo-up-derive", "ra_ide_db", "ra_syntax", "ra_hir", "ra_text_edit"]
+build-binary = ["clap", "env_logger", "lazy_static", "console"]
 build-docs = []
 
 [workspace]
 members = [
 	"cargo-up-derive",
+	"cargo-up-utils",
+	"cargo-up-runner",
 	"cargo-up-up",
 	"rust-up",
 ]
