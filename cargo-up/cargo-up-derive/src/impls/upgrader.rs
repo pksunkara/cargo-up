@@ -59,8 +59,10 @@ pub fn upgrader(input: &DeriveInput) -> TokenStream {
                 self._upgrader.edit.insert(offset, text)
             }
 
-            fn finish(self) -> ::cargo_up::ra_text_edit::TextEdit {
-                self._upgrader.edit.finish()
+            fn finish(&mut self) -> ::cargo_up::ra_text_edit::TextEdit {
+                let edit = self._upgrader.edit.clone().finish();
+                self._upgrader.edit = ::cargo_up::ra_text_edit::TextEditBuilder::default();
+                edit
             }
         }
     }

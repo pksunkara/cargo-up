@@ -23,6 +23,7 @@ where
         analysis
             .with_db(|db| {
                 let mut changes = Map::<String, TextEdit>::new();
+                let mut upgrader = T::default();
                 let semantics = Semantics::new(db);
 
                 // TODO: Allow other deps to be loaded too.
@@ -40,7 +41,7 @@ where
                         let crate_data = &db.crate_graph()[*crate_id];
 
                         if let Some(name) = &crate_data.display_name {
-                            // TODO:
+                            // TODO: Store references from this dep so it's easy to compare
                             println!("{}", name);
                         }
                     }
@@ -51,7 +52,6 @@ where
                     let source_root = db.source_root(*source_root_id);
 
                     for file_id in source_root.walk() {
-                        let mut upgrader = T::default();
                         let source_file = semantics.parse(file_id);
 
                         upgrader.visit(source_file.syntax(), &semantics);

@@ -9,5 +9,5 @@ pub trait Upgrader {
     fn replace(&mut self, range: TextRange, replace_with: String);
     fn delete(&mut self, range: TextRange);
     fn insert(&mut self, offset: TextSize, text: String);
-    fn finish(self) -> TextEdit;
+    fn finish(&mut self) -> TextEdit;
 }
