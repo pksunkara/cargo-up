@@ -3,9 +3,9 @@ use clap::{AppSettings, Clap};
 use std::process::exit;
 
 mod dep;
-mod error;
+mod utils;
 
-use error::{ErrorPrint, TERM_ERR, TERM_OUT};
+use utils::{TERM_ERR, TERM_OUT};
 
 #[derive(Debug, Clap)]
 enum Subcommand {

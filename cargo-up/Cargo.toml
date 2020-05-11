@@ -10,7 +10,7 @@ license = "MIT"
 [[bin]]
 name = "cargo-up"
 path = "src/cli/main.rs"
-required-features = ["build-binary"]
+required-features = ["build-binary"] # remove the need for this
 
 [lib]
 name = "cargo_up"
@@ -19,7 +19,6 @@ path = "src/lib/mod.rs"
 [dependencies]
 # required by lib and bin
 log = "0.4"
-cargo-up-utils = { path = "./cargo-up-utils", version = "0.0.0" }
 
 # required by lib
 cargo-up-derive = { path = "./cargo-up-derive", version = "0.0.1", optional = true }
@@ -33,6 +32,8 @@ rust-analyzer = { path = "../../rust-analyzer/crates/rust-analyzer", optional = 
 # required by bin
 clap = { version = "=3.0.0-beta.1", optional = true }
 cargo_metadata = { version = "0.9", optional = true }
+thiserror = { version = "1.0", optional = true }
+semver = { version = "0.9", optional = true }
 env_logger = { version = "0.7", optional = true }
 lazy_static = { version = "1.4", optional = true }
 console = { version = "0.11", optional = true }
@@ -43,13 +44,12 @@ lto = "thin"
 [features]
 default = ["build-lib"]
 build-lib = ["cargo-up-derive", "ra_ide_db", "ra_syntax", "ra_hir", "ra_text_edit", "ra_db", "rust-analyzer"]
-build-binary = ["clap", "cargo_metadata", "env_logger", "lazy_static", "console"]
+build-binary = ["clap", "cargo_metadata", "thiserror", "semver", "env_logger", "lazy_static", "console"]
 build-docs = []
 
 [workspace]
 members = [
 	"cargo-up-derive",
-	"cargo-up-utils",
 	"cargo-up-up",
 	"rust-up",
 ]
