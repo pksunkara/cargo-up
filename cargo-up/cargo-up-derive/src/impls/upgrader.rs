@@ -1,17 +1,12 @@
 use proc_macro2::TokenStream;
 use proc_macro_error::abort_call_site;
 use quote::quote;
-use syn::{
-    parse_str,
-    punctuated::Punctuated,
-    token::{Brace, Colon, Comma},
-    Data, DataStruct, DeriveInput, Field, Fields, FieldsNamed, Visibility,
-};
+use syn::{punctuated::Punctuated, token::Comma, Data, DataStruct, DeriveInput, Field, Fields};
 
 pub fn upgrader(input: &DeriveInput) -> TokenStream {
     let DeriveInput { ident, .. } = input;
 
-    let mut fields = match input.data {
+    let fields = match input.data {
         Data::Struct(DataStruct {
             fields: Fields::Named(ref fields),
             ..
@@ -23,28 +18,13 @@ pub fn upgrader(input: &DeriveInput) -> TokenStream {
         _ => abort_call_site!("`#[upgrader]` only supports non-tuple structs"),
     };
 
-    fields.push(Field {
-        attrs: vec![],
-        vis: Visibility::Inherited,
-        ident: Some(parse_str("_upgrader").unwrap()),
-        colon_token: Some(Colon::default()),
-        ty: parse_str("::cargo_up::UpgraderInner").unwrap(),
-    });
-
-    let mut new = input.clone();
-
-    if let Data::Struct(d) = new.data {
-        new.data = Data::Struct(DataStruct {
-            fields: Fields::Named(FieldsNamed {
-                brace_token: Brace::default(),
-                named: fields,
-            }),
-            ..d
-        });
-    }
+    let upgrader = quote!(_upgrader: ::cargo_up::UpgraderInner);
 
     quote! {
-        #new
+        struct #ident {
+            #fields,
+            #upgrader
+        }
 
         impl ::cargo_up::Upgrader for #ident {
             fn replace(&mut self, range: ::cargo_up::ra_text_edit::TextRange, replace_with: String) {
