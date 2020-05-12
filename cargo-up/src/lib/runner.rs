@@ -1,11 +1,10 @@
 use crate::{
     ra_hir::Semantics, ra_ide_db::symbol_index::SymbolsDatabase, ra_syntax::AstNode,
-    ra_text_edit::TextEdit, Upgrader, Visitor,
+    ra_text_edit::TextEdit, semver::Version, Upgrader, Visitor,
 };
 use ra_db::{SourceDatabase, SourceDatabaseExt};
 use rust_analyzer::cli::load_cargo;
-use std::collections::BTreeMap as Map;
-use std::{marker::PhantomData, path::Path};
+use std::{collections::BTreeMap as Map, marker::PhantomData, path::Path};
 
 #[derive(Default)]
 pub struct Runner<T>(PhantomData<T>)
@@ -16,14 +15,14 @@ impl<T> Runner<T>
 where
     T: Upgrader + Visitor + Default,
 {
-    pub fn run(&self, root: &Path) {
+    pub fn run(&self, root: &Path, version: Version) {
         let (host, source_roots) = load_cargo(root, true, false).unwrap();
         let analysis = host.analysis();
 
         analysis
             .with_db(|db| {
                 let mut changes = Map::<String, TextEdit>::new();
-                let mut upgrader = T::default();
+                let mut upgrader = T::new(version);
                 let semantics = Semantics::new(db);
 
                 // TODO: Allow other deps to be loaded too.

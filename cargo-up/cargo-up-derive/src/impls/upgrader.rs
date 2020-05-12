@@ -47,6 +47,12 @@ pub fn upgrader(input: &DeriveInput) -> TokenStream {
         #new
 
         impl ::cargo_up::Upgrader for #ident {
+            fn new(version: ::cargo_up::semver::Version) -> Self {
+                let mut ret = Self::default();
+                ret._upgrader.version = format!("{}", version);
+                ret
+            }
+
             fn replace(&mut self, range: ::cargo_up::ra_text_edit::TextRange, replace_with: String) {
                 self._upgrader.edit.replace(range, replace_with)
             }

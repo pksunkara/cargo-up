@@ -40,12 +40,15 @@ impl Dep {
             cache_dir.join("src").join("main.rs"),
             format!(
                 r#"
-                use cargo_up::Runner;
+                use cargo_up::{{Runner, semver::Version}};
                 use clap_up::Clap;
                 use std::path::Path;
 
                 fn main() {{
-                    Runner::<Clap>::default().run(Path::new("{}"));
+                    Runner::<Clap>::default().run(
+                        Path::new("{}"),
+                        Version::parse("3.0.0-beta.1").unwrap(),
+                    );
                 }}
                 "#,
                 &metadata.workspace_root.to_string_lossy()
