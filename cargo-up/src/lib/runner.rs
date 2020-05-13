@@ -1,5 +1,5 @@
 use crate::{
-    ra_hir::Semantics,
+    ra_hir::{Adt, AsAssocItem, AssocItemContainer, Function, Module, Name, Semantics},
     ra_ide_db::{symbol_index::SymbolsDatabase, RootDatabase},
     ra_syntax::{ast, AstNode},
     semver::{SemVerError, Version as SemverVersion},
@@ -54,6 +54,7 @@ impl Runner {
         let mut changes = Map::<String, TextEdit>::new();
         let semantics = Semantics::new(db);
 
+        // TODO: Check for minimum version
         self.version = Some(version);
 
         // TODO: Allow other deps to be loaded too.
@@ -115,12 +116,83 @@ impl Visitor for Runner {
     ) {
         let mut upgrader = self.upgrader.clone();
 
-        if let Some(version) = &self.get_version() {
-            for hook in &version.hooks_method_call_expr {
+        if let Some(version) = self.get_version() {
+            for hook in &version.hook_method_call_expr {
                 hook(&mut upgrader, method_call_expr, semantics);
+            }
+
+            if let Some(name_ref) = method_call_expr.name_ref() {
+                let method = name_ref.text().to_string();
+
+                // Filter out methods which don't have the same names we are looking for
+                if !version
+                    .rename_methods
+                    .iter()
+                    .any(|x| x.1.iter().any(|y| *y.0 == method))
+                {
+                    return;
+                }
+
+                // TODO: Compare with eager loaded methods
+
+                let f = semantics.resolve_method_call(method_call_expr).unwrap();
+
+                if let Some(name) = get_struct_name(&f, semantics.db) {
+                    let mod_name = full_name(&f.module(semantics.db), semantics.db);
+
+                    if let Some(map) = version
+                        .rename_methods
+                        .get(&format!("{}::{}", mod_name, name))
+                    {
+                        if let Some(to) = map.get(&method) {
+                            upgrader.replace(
+                                method_call_expr.name_ref().unwrap().syntax().text_range(),
+                                to.to_string(),
+                            );
+                        }
+                    }
+                }
             }
         }
 
         self.upgrader = upgrader;
     }
+}
+
+fn get_struct_name(f: &Function, db: &RootDatabase) -> Option<Name> {
+    let assoc_item = f.clone().as_assoc_item(db)?;
+
+    if let AssocItemContainer::ImplDef(impl_def) = assoc_item.container(db) {
+        if let Adt::Struct(s) = impl_def.target_ty(db).as_adt()? {
+            return Some(s.name(db));
+        }
+    }
+
+    None
+}
+
+fn full_name(m: &Module, db: &RootDatabase) -> String {
+    let mut ret = vec![];
+    let mut module = *m;
+
+    loop {
+        if let Some(name) = module.name(db) {
+            ret.push(format!("{}", name));
+
+            if let Some(p) = module.parent(db) {
+                module = p;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    if let Some(name) = m.krate().display_name(db) {
+        ret.push(format!("{}", name));
+    }
+
+    ret.reverse();
+    ret.join("::")
 }

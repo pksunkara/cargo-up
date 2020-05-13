@@ -7,6 +7,12 @@ use crate::{
     },
 };
 
+macro_rules! visit {
+    ($method:ident, $node:ident) => {
+        fn $method(&mut self, _: &ast::$node, _semantics: &Semantics<RootDatabase>) {}
+    };
+}
+
 pub trait Visitor {
     fn visit(&mut self, node: &SyntaxNode, semantics: &Semantics<RootDatabase>) {
         match node.kind() {
@@ -25,6 +31,6 @@ pub trait Visitor {
         }
     }
 
-    fn visit_source_file(&mut self, _: &ast::SourceFile, _: &Semantics<RootDatabase>) {}
-    fn visit_method_call_expr(&mut self, _: &ast::MethodCallExpr, _: &Semantics<RootDatabase>) {}
+    visit!(visit_source_file, SourceFile);
+    visit!(visit_method_call_expr, MethodCallExpr);
 }
