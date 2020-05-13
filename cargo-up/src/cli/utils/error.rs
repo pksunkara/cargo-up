@@ -11,6 +11,11 @@ lazy_static! {
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("unable to find package {id}")]
+    PackageNotFound { id: String },
+    #[error("no upgrader {upgrader} found on crates.io for dependency {id}")]
+    NoUpgrader { id: String, upgrader: String },
+
     #[error("unable to find CARGO_HOME dir")]
     NoCargoHome,
     #[error("unable to run cargo command with args {args:?}, got {err}")]
@@ -35,6 +40,13 @@ impl Error {
 
     fn color(self) -> Self {
         match self {
+            Self::PackageNotFound { id } => Self::PackageNotFound {
+                id: format!("{}", YELLOW.apply_to(id)),
+            },
+            Self::NoUpgrader { id, upgrader } => Self::NoUpgrader {
+                id: format!("{}", YELLOW.apply_to(id)),
+                upgrader: format!("{}", YELLOW.apply_to(upgrader)),
+            },
             _ => self,
         }
     }

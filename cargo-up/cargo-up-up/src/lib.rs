@@ -5,6 +5,7 @@ use cargo_up::{
 };
 
 #[upgrader]
+#[derive(Default)]
 pub struct CargoUp;
 
 impl Visitor for CargoUp {}

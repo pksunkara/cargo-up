@@ -10,7 +10,7 @@ license = "MIT"
 [[bin]]
 name = "cargo-up"
 path = "src/cli/main.rs"
-required-features = ["build-binary"] # remove the need for this
+required-features = ["cli"] # remove the need for this
 
 [lib]
 name = "cargo_up"
@@ -36,17 +36,35 @@ cargo_metadata = { version = "0.9", optional = true }
 thiserror = { version = "1.0", optional = true }
 env_logger = { version = "0.7", optional = true }
 lazy_static = { version = "1.4", optional = true }
+heck = { version = "0.3", optional = true }
 console = { version = "0.11", optional = true }
+crates_io_api = { version = "0.5", optional = true } # TODO: 0.6 async or replace with pure reqwest
 
 [profile.release]
 lto = "thin"
 
 [features]
-default = ["build-lib"]
-build-lib = ["cargo-up-derive", "ra_ide_db", "ra_syntax", "ra_hir", "ra_text_edit", "ra_db", "rust-analyzer"]
-# TODO: Rename to cli
-build-binary = ["clap", "cargo_metadata", "thiserror", "env_logger", "lazy_static", "console"]
-build-docs = []
+default = ["lib"]
+lib = [
+	"cargo-up-derive",
+	"ra_ide_db",
+	"ra_syntax",
+	"ra_hir",
+	"ra_text_edit",
+	"ra_db",
+	"rust-analyzer"
+]
+cli = [
+	"clap",
+	"cargo_metadata",
+	"thiserror",
+	"env_logger",
+	"lazy_static",
+	"heck",
+	"console",
+	"crates_io_api"
+]
+docs = []
 
 [workspace]
 members = [
