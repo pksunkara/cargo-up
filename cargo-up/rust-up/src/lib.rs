@@ -1,10 +1,10 @@
 use cargo_up::{
+    ra_hir::Semantics,
     ra_ide_db::RootDatabase,
     ra_syntax::ast::{self, AstNode},
-    UpgradeVisitor, Upgrader,
+    Runner, Upgrader, Version,
 };
 
-#[derive(Default)]
-pub struct Rust;
-
-impl UpgradeVisitor for Rust {}
+pub fn runner() -> Runner {
+    Runner::new().minimum("1.40.0").unwrap()
+}

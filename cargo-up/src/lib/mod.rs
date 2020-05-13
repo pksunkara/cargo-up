@@ -7,10 +7,11 @@ pub use semver;
 
 mod runner;
 mod upgrader;
+mod version;
 mod visitor;
 
-#[doc(hidden)]
 pub use runner::Runner;
-pub use upgrader::{Editor, UpgradeVisitor, Upgrader};
+pub use upgrader::Upgrader;
+pub use version::Version;
 
 use visitor::Visitor;

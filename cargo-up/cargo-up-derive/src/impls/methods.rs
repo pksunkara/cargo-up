@@ -5,11 +5,11 @@ use syn::parse::{Parse, ParseStream, Result};
 pub struct Methods;
 
 impl Parse for Methods {
-    fn parse(input: ParseStream) -> Result<Self> {
+    fn parse(_input: ParseStream) -> Result<Self> {
         Ok(Methods {})
     }
 }
 
-pub fn rename_struct_methods(input: Methods) -> TokenStream {
+pub fn rename_struct_methods(_input: Methods) -> TokenStream {
     quote! {}
 }

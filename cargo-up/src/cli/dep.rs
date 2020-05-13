@@ -77,21 +77,19 @@ impl Dep {
             cache_dir.join("src").join("main.rs"),
             format!(
                 r#"
-                use cargo_up::{{Runner, semver::Version}};
-                use {}::upgrader;
+                use cargo_up::{{semver::Version}};
                 use std::path::Path;
 
                 fn main() {{
-                    Runner::run(
-                        upgrader,
+                    {}::runner().run(
                         Path::new("{}"),
-                        Version::parse("{}").unwrap(),
+                        Version::parse("3.0.0-beta.1").unwrap(),
                     );
                 }}
                 "#,
                 &upgrader,
                 &metadata.workspace_root.to_string_lossy(),
-                pkg.version.to_string(),
+                // pkg.version.to_string(), TODO: Get the next version from crates.io
             ),
         )?;
 
