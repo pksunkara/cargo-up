@@ -78,19 +78,18 @@ impl Dep {
             format!(
                 r#"
                 use cargo_up::{{Runner, semver::Version}};
-                use {}::{};
+                use {}::upgrader;
                 use std::path::Path;
 
                 fn main() {{
-                    Runner::<{}>::default().run(
+                    Runner::run(
+                        upgrader,
                         Path::new("{}"),
                         Version::parse("{}").unwrap(),
                     );
                 }}
                 "#,
                 &upgrader,
-                &dep_camel,
-                &dep_camel,
                 &metadata.workspace_root.to_string_lossy(),
                 pkg.version.to_string(),
             ),

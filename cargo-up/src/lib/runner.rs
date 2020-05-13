@@ -1,28 +1,32 @@
 use crate::{
     ra_hir::Semantics, ra_ide_db::symbol_index::SymbolsDatabase, ra_syntax::AstNode,
-    ra_text_edit::TextEdit, semver::Version, Upgrader, Visitor,
+    semver::Version, UpgradeVisitor, Upgrader, Visitor,
 };
 use ra_db::{SourceDatabase, SourceDatabaseExt};
+use ra_text_edit::TextEdit;
 use rust_analyzer::cli::load_cargo;
+use std::panic::RefUnwindSafe;
 use std::{collections::BTreeMap as Map, marker::PhantomData, path::Path};
 
-#[derive(Default)]
 pub struct Runner<T>(PhantomData<T>)
 where
-    T: Upgrader + Visitor;
+    T: UpgradeVisitor;
 
 impl<T> Runner<T>
 where
-    T: Upgrader + Visitor,
+    T: UpgradeVisitor,
 {
-    pub fn run(&self, root: &Path, version: Version) {
+    pub fn run<F>(upgrader: F, root: &Path, version: Version)
+    where
+        F: Fn() -> Upgrader<T> + RefUnwindSafe,
+    {
         let (host, source_roots) = load_cargo(root, true, false).unwrap();
         let analysis = host.analysis();
 
         analysis
             .with_db(|db| {
                 let mut changes = Map::<String, TextEdit>::new();
-                let mut upgrader = T::new(version);
+                let mut upgrader = upgrader();
                 let semantics = Semantics::new(db);
 
                 // TODO: Allow other deps to be loaded too.
@@ -57,7 +61,7 @@ where
 
                         changes.insert(
                             db.file_relative_path(file_id).as_str().to_string(),
-                            upgrader.finish(),
+                            upgrader.editor.finish(),
                         );
                     }
                 }
