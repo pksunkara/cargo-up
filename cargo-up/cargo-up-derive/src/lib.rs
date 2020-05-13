@@ -1,14 +1,13 @@
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
-use syn::{parse_macro_input, DeriveInput};
+use syn::parse_macro_input;
 
 mod impls;
-mod utils;
 
-/// Generates the upgrader impl
-#[proc_macro_attribute]
+// Making proc_macros ready for 1.45
+
+#[proc_macro]
 #[proc_macro_error]
-pub fn upgrader(attr: TokenStream, input: TokenStream) -> TokenStream {
-    let input: DeriveInput = parse_macro_input!(input);
-    impls::upgrader(parse_macro_input!(attr), &input).into()
+pub fn rename_struct_methods(input: TokenStream) -> TokenStream {
+    impls::rename_struct_methods(parse_macro_input!(input)).into()
 }

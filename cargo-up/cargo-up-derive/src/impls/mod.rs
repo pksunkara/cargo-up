@@ -1,3 +1,3 @@
-mod upgrader;
+mod methods;
 
-pub use upgrader::upgrader;
+pub use methods::rename_struct_methods;
