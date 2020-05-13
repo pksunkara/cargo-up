@@ -1,14 +1,67 @@
+use crate::utils::Options;
 use proc_macro2::TokenStream;
-use proc_macro_error::abort_call_site;
+use proc_macro_error::{abort, abort_call_site};
 use quote::quote;
+use semver::Version;
 use syn::{
+    parse::{Parse, ParseStream, Result},
     parse_str,
     punctuated::Punctuated,
     token::{Brace, Colon, Comma},
-    Data, DataStruct, DeriveInput, Field, Fields, FieldsNamed, Visibility,
+    Data, DataStruct, DeriveInput, Expr, Field, Fields, FieldsNamed, Lit, LitStr, Visibility,
 };
 
-pub fn upgrader(input: &DeriveInput) -> TokenStream {
+pub struct Upgrader {
+    minimum: Option<LitStr>,
+    peers: Vec<LitStr>,
+}
+
+impl Parse for Upgrader {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let options: Options = input.parse()?;
+
+        // TODO: Really think something like serde_token can make this better looking
+        let minimum = options.find("minimum").map(|x| {
+            if let Expr::Lit(expr_lit) = x.1 {
+                if let Lit::Str(lit) = expr_lit.lit.clone() {
+                    return lit;
+                }
+            }
+
+            abort!(x.1, "expected a literal string");
+        });
+
+        if let Some(version) = &minimum {
+            if let Err(_) = Version::parse(&version.value()) {
+                abort!(version, "expected a valid semver version");
+            }
+        }
+
+        let peers = options.find("peers").map_or(vec![], |x| {
+            if let Expr::Array(expr_array) = x.1 {
+                return expr_array
+                    .elems
+                    .iter()
+                    .flat_map(|x| {
+                        if let Expr::Lit(expr_lit) = x {
+                            if let Lit::Str(lit) = expr_lit.lit.clone() {
+                                return Some(lit);
+                            }
+                        }
+
+                        abort!(x, "expected a literal string");
+                    })
+                    .collect();
+            }
+
+            abort!(x.1, "expected an array of literal strings");
+        });
+
+        Ok(Upgrader { minimum, peers })
+    }
+}
+
+pub fn upgrader(attr: Upgrader, input: &DeriveInput) -> TokenStream {
     let DeriveInput { ident, .. } = input;
 
     let mut fields = match input.data {
