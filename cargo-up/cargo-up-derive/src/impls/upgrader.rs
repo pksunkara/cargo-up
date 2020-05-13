@@ -100,28 +100,15 @@ pub fn upgrader(attr: Upgrader, input: &DeriveInput) -> TokenStream {
         #new
 
         impl ::cargo_up::Upgrader for #ident {
+            #[inline]
+            fn get_upgrader_mut(&mut self) -> &mut ::cargo_up::UpgraderInner {
+                &mut self._upgrader
+            }
+
             fn new(version: ::cargo_up::semver::Version) -> Self {
                 let mut ret = Self::default();
                 ret._upgrader.version = format!("{}", version);
                 ret
-            }
-
-            fn replace(&mut self, range: ::cargo_up::ra_text_edit::TextRange, replace_with: String) {
-                self._upgrader.edit.replace(range, replace_with)
-            }
-
-            fn delete(&mut self, range: ::cargo_up::ra_text_edit::TextRange) {
-                self._upgrader.edit.delete(range)
-            }
-
-            fn insert(&mut self, offset: ::cargo_up::ra_text_edit::TextSize, text: String) {
-                self._upgrader.edit.insert(offset, text)
-            }
-
-            fn finish(&mut self) -> ::cargo_up::ra_text_edit::TextEdit {
-                let edit = self._upgrader.edit.clone().finish();
-                self._upgrader.edit = ::cargo_up::ra_text_edit::TextEditBuilder::default();
-                edit
             }
         }
     }

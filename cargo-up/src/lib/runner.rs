@@ -9,11 +9,11 @@ use std::{collections::BTreeMap as Map, marker::PhantomData, path::Path};
 #[derive(Default)]
 pub struct Runner<T>(PhantomData<T>)
 where
-    T: Upgrader + Visitor + Default;
+    T: Upgrader + Visitor;
 
 impl<T> Runner<T>
 where
-    T: Upgrader + Visitor + Default,
+    T: Upgrader + Visitor,
 {
     pub fn run(&self, root: &Path, version: Version) {
         let (host, source_roots) = load_cargo(root, true, false).unwrap();
