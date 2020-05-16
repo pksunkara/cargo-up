@@ -18,6 +18,10 @@ impl Upgrader {
         self.edit.insert(offset, text)
     }
 
+    pub fn add_dep(&mut self) {}
+
+    pub fn add_feature(&mut self) {}
+
     pub(crate) fn finish(&mut self) -> TextEdit {
         let edit = self.edit.clone().finish();
         self.edit = TextEditBuilder::default();

@@ -12,7 +12,6 @@ use std::{collections::BTreeMap as Map, path::Path};
 
 pub struct Runner {
     pub(crate) minimum: Option<SemverVersion>,
-    pub(crate) peers: Vec<String>,
     pub(crate) versions: Vec<Version>,
     upgrader: Upgrader,
     version: Option<SemverVersion>,
@@ -22,7 +21,6 @@ impl Runner {
     pub fn new() -> Self {
         Self {
             minimum: None,
-            peers: vec![],
             versions: vec![],
             upgrader: Upgrader::default(),
             version: None,
@@ -32,11 +30,6 @@ impl Runner {
     pub fn minimum(mut self, version: &str) -> Result<Self, SemVerError> {
         self.minimum = Some(SemverVersion::parse(version)?);
         Ok(self)
-    }
-
-    pub fn peers(mut self, peers: &[&str]) -> Self {
-        self.peers = peers.to_vec().iter().map(|x| x.to_string()).collect();
-        self
     }
 
     pub fn version(mut self, version: Version) -> Self {

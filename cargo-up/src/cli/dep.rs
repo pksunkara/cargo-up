@@ -46,7 +46,7 @@ impl Dep {
         //     upgrader: upgrader.clone(),
         // })?;
 
-        // Write the upgrader
+        // Write the upgrade runner
         let cargo_home = PathBuf::from(var_os("CARGO_HOME").ok_or(Error::NoCargoHome)?);
         let cache_dir = cargo_home.join("cargo-up-cache");
 

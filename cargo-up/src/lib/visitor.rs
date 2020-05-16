@@ -23,6 +23,9 @@ pub trait Visitor {
                 &ast::MethodCallExpr::cast(node.clone()).unwrap(),
                 &semantics,
             ),
+            SyntaxKind::FIELD_EXPR => {
+                self.visit_field_expr(&ast::FieldExpr::cast(node.clone()).unwrap(), &semantics)
+            }
             _ => {}
         };
 
@@ -33,4 +36,5 @@ pub trait Visitor {
 
     visit!(visit_source_file, SourceFile);
     visit!(visit_method_call_expr, MethodCallExpr);
+    visit!(visit_field_expr, FieldExpr);
 }
