@@ -66,6 +66,8 @@ impl Dep {
                 publish = false
 
                 [dependencies]
+                log = "0.4"
+                env_logger = "0.7"
                 cargo-up = {{ path = "/Users/pksunkara/Coding/pksunkara/cargo-up/cargo-up" }}
                 clap_up = {{ path = "/Users/pksunkara/Coding/clap-rs/clap/clap_up" }}
                 "#,
@@ -89,12 +91,15 @@ impl Dep {
                 }}
 
                 fn main() {{
+                    env_logger::builder()
+                        .format_timestamp(None)
+                        .init();
 
                     runner().run(
                         Path::new("{}"),
                         "{}",
                         Version::parse("3.0.0-beta.1").unwrap(),
-                    );
+                    ).unwrap();
                 }}
                 "#,
                 &upgrader,

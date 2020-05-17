@@ -1,13 +1,7 @@
-use crate::utils::TERM_ERR;
-use console::{Style, Term};
-use lazy_static::lazy_static;
+use crate::utils::term::{RED_BOLD, TERM_ERR, YELLOW};
+use console::Term;
 use std::io;
 use thiserror::Error;
-
-lazy_static! {
-    static ref YELLOW: Style = Style::new().for_stderr().yellow();
-    static ref RED_BOLD: Style = Style::new().for_stderr().red().bold();
-}
 
 #[derive(Error, Debug)]
 pub enum Error {

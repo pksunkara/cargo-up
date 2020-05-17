@@ -1,4 +1,4 @@
-use crate::utils::{Error, Result, INTERNAL_ERR, TERM_ERR};
+use crate::utils::{term::TERM_ERR, Error, Result, INTERNAL_ERR};
 use std::{
     io::{BufRead, BufReader},
     path::PathBuf,

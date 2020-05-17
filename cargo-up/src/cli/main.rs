@@ -5,7 +5,7 @@ use std::process::exit;
 mod dep;
 mod utils;
 
-use utils::{TERM_ERR, TERM_OUT};
+use utils::term::{TERM_ERR, TERM_OUT};
 
 #[derive(Debug, Clap)]
 enum Subcommand {
@@ -35,8 +35,6 @@ enum Cargo {
 }
 
 fn main() {
-    env_logger::init();
-
     let Cargo::Up(opt) = Cargo::parse();
 
     let mut cmd = MetadataCommand::new();

@@ -1,7 +1,7 @@
 use crate::{
     ra_hir::{Adt, AssocItem, Crate, Field, Function, Module, ModuleDef, ScopeDef},
     ra_ide_db::RootDatabase,
-    INTERNAL_ERR,
+    utils::INTERNAL_ERR,
 };
 use std::collections::HashMap as Map;
 
@@ -40,10 +40,11 @@ impl Preloader {
 
         for impl_def in module.impl_defs(db) {
             let target_ty = impl_def.target_ty(db);
+            let target_trait = impl_def.target_trait(db);
 
             match target_ty.as_adt() {
                 // Load struct methods
-                Some(Adt::Struct(s)) => {
+                Some(Adt::Struct(s)) if target_trait.is_none() => {
                     let name = format!("{}::{}", path.join("::"), s.name(db));
 
                     for assoc_item in impl_def.items(db) {

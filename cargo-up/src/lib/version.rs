@@ -1,9 +1,9 @@
 use crate::{
-    normalize,
     ra_hir::Semantics,
     ra_ide_db::RootDatabase,
     ra_syntax::ast,
     semver::{SemVerError, Version as SemverVersion},
+    utils::normalize,
     Upgrader,
 };
 use std::collections::BTreeMap as Map;

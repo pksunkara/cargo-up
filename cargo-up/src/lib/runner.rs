@@ -1,15 +1,15 @@
 use crate::{
-    normalize,
     ra_hir::{Crate, Semantics},
     ra_ide_db::{symbol_index::SymbolsDatabase, RootDatabase},
     ra_syntax::{ast, AstNode},
     semver::{SemVerError, Version as SemverVersion},
-    Preloader, Upgrader, Version, Visitor, INTERNAL_ERR,
+    utils::{normalize, INTERNAL_ERR, RED_BOLD, TERM_ERR, TERM_OUT, YELLOW, YELLOW_OUT},
+    Preloader, Upgrader, Version, Visitor,
 };
 use ra_db::SourceDatabaseExt;
 use ra_text_edit::TextEdit;
 use rust_analyzer::cli::load_cargo;
-use std::{collections::BTreeMap as Map, path::Path};
+use std::{collections::BTreeMap as Map, io::Result as IoResult, path::Path};
 
 pub struct Runner {
     pub(crate) minimum: Option<SemverVersion>,
@@ -43,25 +43,36 @@ impl Runner {
 
 impl Runner {
     #[doc(hidden)]
-    pub fn run(&mut self, root: &Path, dep: &str, version: SemverVersion) {
+    pub fn run(&mut self, root: &Path, dep: &str, version: SemverVersion) -> IoResult<()> {
         let (host, _) = load_cargo(root, true, false).unwrap();
         let db = host.raw_database();
 
         let mut changes = Map::<String, TextEdit>::new();
         let semantics = Semantics::new(db);
 
-        // TODO: Check for minimum version
+        if let Some(min) = self.minimum.clone() {
+            if version <= min {
+                return TERM_ERR.write_line(&format!(
+                    "{}: minimum version of {} that should be upgraded from is {}",
+                    RED_BOLD.apply_to("error"),
+                    YELLOW.apply_to(dep),
+                    YELLOW.apply_to(min),
+                ));
+            }
+        }
+
         self.version = version;
         let version = self.get_version();
 
         let peers = if let Some(version) = version {
-            let mut peers = version.peers.clone();
-            peers.push(dep.to_string());
+            let mut peers = vec![dep.to_string()];
+            peers.extend(version.peers.clone());
             peers
         } else {
-            // TODO: Better message
-            println!("Running nothing for {}", self.version);
-            return;
+            return TERM_OUT.write_line(&format!(
+                "There are no changes in the upgrader for {}",
+                YELLOW_OUT.apply_to(self.version.clone())
+            ));
         };
 
         // Loop to find and eager load the dep we are upgrading
@@ -83,8 +94,6 @@ impl Runner {
             }
         }
 
-        println!("{:#?}", self.preloader);
-
         // Actual loop to walk through the source code
         for source_root_id in db.local_roots().iter() {
             let source_root = db.source_root(*source_root_id);
@@ -104,6 +113,11 @@ impl Runner {
         // Apply chnages
         // TODO:
         println!("{:#?}", changes);
+
+        TERM_ERR.flush()?;
+        TERM_OUT.flush()?;
+
+        Ok(())
     }
 
     fn get_version(&self) -> Option<&Version> {
@@ -180,7 +194,7 @@ impl Visitor for Runner {
         if let Some(name_ref) = field_expr.name_ref() {
             let method = name_ref.text().to_string();
 
-            // Filter out methods which don't have the same names we are looking for
+            // Filter out members which don't have the same names we are looking for
             if !version
                 .rename_members
                 .iter()
