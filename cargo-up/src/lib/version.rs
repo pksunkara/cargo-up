@@ -27,6 +27,7 @@ macro_rules! hook {
 }
 
 alias!(MethodCallExpr);
+alias!(CallExpr);
 alias!(FieldExpr);
 
 pub struct Version {
@@ -35,6 +36,7 @@ pub struct Version {
     pub(crate) rename_methods: Map<String, Map<String, String>>,
     pub(crate) rename_members: Map<String, Map<String, String>>,
     pub(crate) hook_method_call_expr: Vec<Box<MethodCallExpr>>,
+    pub(crate) hook_call_expr: Vec<Box<CallExpr>>,
     pub(crate) hook_field_expr: Vec<Box<FieldExpr>>,
 }
 
@@ -46,6 +48,7 @@ impl Version {
             rename_methods: Map::new(),
             rename_members: Map::new(),
             hook_method_call_expr: vec![],
+            hook_call_expr: vec![],
             hook_field_expr: vec![],
         })
     }
@@ -76,5 +79,6 @@ impl Version {
     }
 
     hook!(hook_method_call_expr, MethodCallExpr);
+    hook!(hook_call_expr, CallExpr);
     hook!(hook_field_expr, FieldExpr);
 }

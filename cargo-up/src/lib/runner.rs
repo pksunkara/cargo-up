@@ -179,6 +179,17 @@ impl Visitor for Runner {
         self.upgrader = upgrader;
     }
 
+    fn visit_call_expr(&mut self, call_expr: &ast::CallExpr, semantics: &Semantics<RootDatabase>) {
+        let mut upgrader = self.upgrader.clone();
+        let version = self.get_version().expect(INTERNAL_ERR);
+
+        for hook in &version.hook_call_expr {
+            hook(&mut upgrader, call_expr, semantics);
+        }
+
+        self.upgrader = upgrader;
+    }
+
     fn visit_field_expr(
         &mut self,
         field_expr: &ast::FieldExpr,
