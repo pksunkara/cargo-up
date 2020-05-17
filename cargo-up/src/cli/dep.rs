@@ -1,11 +1,10 @@
-use crate::utils::{cargo, normalize, Error, Result};
+use crate::utils::{cargo, normalize, Error, Result, INTERNAL_ERR};
 use cargo_metadata::Metadata;
 use clap::Clap;
 use crates_io_api::SyncClient;
-use heck::CamelCase;
 use semver::Version;
 use std::{
-    env::var_os,
+    env::{current_dir, var_os},
     fs::{create_dir_all, write},
     path::PathBuf,
     process::Command,
@@ -17,9 +16,17 @@ pub struct Dep {
     /// Dependency name
     dep: String,
 
+    /// Specify version to upgrade to if upgrader path is given
+    #[clap(long, hidden = true, requires_all = &["name", "path"])]
+    to_version: Option<Version>,
+
     /// Specify path for upgrader
-    #[clap(long, conflicts_with_all = &["version"])]
+    #[clap(long, hidden = true, requires_all = &["name", "to-version"], conflicts_with_all = &["version"])]
     path: Option<String>,
+
+    /// Specify name for upgrader if upgrader path is given
+    #[clap(long, hidden = true, requires_all = &["path", "to-version"])]
+    name: Option<String>,
 
     /// Specify version of upgrader
     #[clap(short, long)]
@@ -29,7 +36,6 @@ pub struct Dep {
 impl Dep {
     pub fn run(&self, metadata: Metadata) -> Result {
         let dep = normalize(&self.dep);
-        let dep_camel = dep.to_camel_case();
 
         // Find the dep in metadata first
         let pkg = metadata
@@ -40,14 +46,36 @@ impl Dep {
                 id: self.dep.clone(),
             })?;
 
-        // Find the upgrader in crates.io
-        let upgrader = format!("{}_up", &dep);
-        let client = SyncClient::new();
+        let (upgrader, upgrader_version, to_version) = if let Some(name) = &self.name {
+            let path = current_dir()?.join(self.path.as_ref().expect(INTERNAL_ERR));
 
-        // let krate = client.get_crate(&upgrader).map_err(|_| Error::NoUpgrader {
-        //     id: dep.clone(),
-        //     upgrader: upgrader.clone(),
-        // })?;
+            (
+                name.to_string(),
+                format!(
+                    r#"{{ path = "{}" }}"#,
+                    path.canonicalize().unwrap().to_string_lossy(),
+                ),
+                self.to_version.as_ref().expect(INTERNAL_ERR).to_string(),
+            )
+        } else {
+            // Find the upgrader in crates.io
+            let upgrader = format!("{}_up", &dep);
+            let client = SyncClient::new();
+
+            let krate = client.get_crate(&upgrader).map_err(|_| Error::NoUpgrader {
+                id: dep.clone(),
+                upgrader: upgrader.clone(),
+            })?;
+
+            (
+                krate.crate_data.name.clone(),
+                self.version
+                    .as_ref()
+                    .map_or_else(|| krate.crate_data.max_version.clone(), |x| x.to_string()),
+                // pkg.version.to_string(), TODO: Get the next version from crates.io
+                String::from("3.0.0-beta.1"),
+            )
+        };
 
         // Write the upgrade runner
         let cargo_home = PathBuf::from(var_os("CARGO_HOME").ok_or(Error::NoCargoHome)?);
@@ -69,12 +97,9 @@ impl Dep {
                 log = "0.4"
                 env_logger = "0.7"
                 cargo-up = {{ path = "/Users/pksunkara/Coding/pksunkara/cargo-up/cargo-up" }}
-                clap_up = {{ path = "/Users/pksunkara/Coding/clap-rs/clap/clap_up" }}
+                {} = {}
                 "#,
-                // &krate.crate_data.name,
-                // self.version
-                //     .as_ref()
-                //     .map_or_else(|| krate.crate_data.max_version.clone(), |x| x.to_string()),
+                upgrader, upgrader_version
             ),
         )?;
 
@@ -98,14 +123,14 @@ impl Dep {
                     runner().run(
                         Path::new("{}"),
                         "{}",
-                        Version::parse("3.0.0-beta.1").unwrap(),
+                        Version::parse("{}").unwrap(),
                     ).unwrap();
                 }}
                 "#,
                 &upgrader,
                 &metadata.workspace_root.to_string_lossy(),
                 &dep,
-                // pkg.version.to_string(), TODO: Get the next version from crates.io
+                &to_version,
             ),
         )?;
 
