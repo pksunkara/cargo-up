@@ -17,7 +17,10 @@ pub struct Dep {
     /// Dependency name
     dep: String,
 
-    // TODO: Allow specifying path?
+    /// Specify path for upgrader
+    #[clap(long, conflicts_with_all = &["version"])]
+    path: Option<String>,
+
     /// Specify version of upgrader
     #[clap(short, long)]
     version: Option<Version>,
@@ -77,18 +80,26 @@ impl Dep {
             cache_dir.join("src").join("main.rs"),
             format!(
                 r#"
-                use cargo_up::{{semver::Version}};
+                use cargo_up::{{semver::Version, Runner}};
                 use std::path::Path;
 
+                // To type check the returned runner
+                fn runner() -> Runner {{
+                    {}::runner()
+                }}
+
                 fn main() {{
-                    {}::runner().run(
+
+                    runner().run(
                         Path::new("{}"),
+                        "{}",
                         Version::parse("3.0.0-beta.1").unwrap(),
                     );
                 }}
                 "#,
                 &upgrader,
                 &metadata.workspace_root.to_string_lossy(),
+                &dep,
                 // pkg.version.to_string(), TODO: Get the next version from crates.io
             ),
         )?;

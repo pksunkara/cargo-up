@@ -1,11 +1,12 @@
 use crate::{
-    ra_hir::{Adt, AsAssocItem, AssocItemContainer, Function, Module, Name, Semantics},
+    normalize,
+    ra_hir::{Crate, Semantics},
     ra_ide_db::{symbol_index::SymbolsDatabase, RootDatabase},
     ra_syntax::{ast, AstNode},
     semver::{SemVerError, Version as SemverVersion},
-    Upgrader, Version, Visitor,
+    Preloader, Upgrader, Version, Visitor, INTERNAL_ERR,
 };
-use ra_db::{SourceDatabase, SourceDatabaseExt};
+use ra_db::SourceDatabaseExt;
 use ra_text_edit::TextEdit;
 use rust_analyzer::cli::load_cargo;
 use std::{collections::BTreeMap as Map, path::Path};
@@ -14,7 +15,8 @@ pub struct Runner {
     pub(crate) minimum: Option<SemverVersion>,
     pub(crate) versions: Vec<Version>,
     upgrader: Upgrader,
-    version: Option<SemverVersion>,
+    version: SemverVersion,
+    preloader: Preloader,
 }
 
 impl Runner {
@@ -23,7 +25,8 @@ impl Runner {
             minimum: None,
             versions: vec![],
             upgrader: Upgrader::default(),
-            version: None,
+            version: SemverVersion::parse("0.0.0").expect(INTERNAL_ERR),
+            preloader: Preloader::default(),
         }
     }
 
@@ -40,36 +43,47 @@ impl Runner {
 
 impl Runner {
     #[doc(hidden)]
-    pub fn run(&mut self, root: &Path, version: SemverVersion) {
-        let (host, source_roots) = load_cargo(root, true, false).unwrap();
+    pub fn run(&mut self, root: &Path, dep: &str, version: SemverVersion) {
+        let (host, _) = load_cargo(root, true, false).unwrap();
         let db = host.raw_database();
 
         let mut changes = Map::<String, TextEdit>::new();
         let semantics = Semantics::new(db);
 
         // TODO: Check for minimum version
-        self.version = Some(version);
+        self.version = version;
+        let version = self.get_version();
 
-        // TODO: Allow other deps to be loaded too.
-        // For example, if 2 crates are being combined into one.
+        let peers = if let Some(version) = version {
+            let mut peers = version.peers.clone();
+            peers.push(dep.to_string());
+            peers
+        } else {
+            // TODO: Better message
+            println!("Running nothing for {}", self.version);
+            return;
+        };
 
         // Loop to find and eager load the dep we are upgrading
-        for (source_root_id, project_root) in source_roots.iter() {
-            if project_root.is_member() {
+        for krate in Crate::all(db) {
+            let file_id = krate.root_file(db);
+            let source_root = db.source_root(db.file_source_root(file_id));
+
+            if !source_root.is_library {
                 continue;
             }
 
-            let crate_ids = db.source_root_crates(*source_root_id);
-
-            for crate_id in crate_ids.iter() {
-                let crate_data = &db.crate_graph()[*crate_id];
-
-                if let Some(name) = &crate_data.display_name {
-                    // TODO: Store references from this dep so it's easy to compare
-                    println!("{}", name);
+            if let Some(name) = krate.display_name(db) {
+                if let Some(peer) = peers
+                    .iter()
+                    .find(|x| **x == normalize(&format!("{}", name)))
+                {
+                    self.preloader.load(peer, db, &krate);
                 }
             }
         }
+
+        println!("{:#?}", self.preloader);
 
         // Actual loop to walk through the source code
         for source_root_id in db.local_roots().iter() {
@@ -93,9 +107,7 @@ impl Runner {
     }
 
     fn get_version(&self) -> Option<&Version> {
-        self.versions
-            .iter()
-            .find(|x| x.version == *self.version.as_ref().unwrap())
+        self.versions.iter().find(|x| x.version == self.version)
     }
 }
 
@@ -108,38 +120,40 @@ impl Visitor for Runner {
         semantics: &Semantics<RootDatabase>,
     ) {
         let mut upgrader = self.upgrader.clone();
+        let version = self.get_version().expect(INTERNAL_ERR);
 
-        if let Some(version) = self.get_version() {
-            for hook in &version.hook_method_call_expr {
-                hook(&mut upgrader, method_call_expr, semantics);
+        for hook in &version.hook_method_call_expr {
+            hook(&mut upgrader, method_call_expr, semantics);
+        }
+
+        if let Some(name_ref) = method_call_expr.name_ref() {
+            let method = name_ref.text().to_string();
+
+            // Filter out methods which don't have the same names we are looking for
+            if !version
+                .rename_methods
+                .iter()
+                .any(|x| x.1.iter().any(|y| *y.0 == method))
+            {
+                return;
             }
 
-            if let Some(name_ref) = method_call_expr.name_ref() {
-                let method = name_ref.text().to_string();
-
-                // Filter out methods which don't have the same names we are looking for
-                if !version
-                    .rename_methods
+            if let Some(f) = semantics.resolve_method_call(method_call_expr) {
+                if let Some(name) = self
+                    .preloader
+                    .methods
                     .iter()
-                    .any(|x| x.1.iter().any(|y| *y.0 == method))
+                    .find(|x| *x.0 == f)
+                    .map(|x| x.1)
                 {
-                    return;
-                }
-
-                // TODO: Compare with eager loaded methods
-
-                let f = semantics.resolve_method_call(method_call_expr).unwrap();
-
-                if let Some(name) = get_struct_name(&f, semantics.db) {
-                    let mod_name = full_name(&f.module(semantics.db), semantics.db);
-
-                    if let Some(map) = version
-                        .rename_methods
-                        .get(&format!("{}::{}", mod_name, name))
-                    {
+                    if let Some(map) = version.rename_methods.get(name) {
                         if let Some(to) = map.get(&method) {
                             upgrader.replace(
-                                method_call_expr.name_ref().unwrap().syntax().text_range(),
+                                method_call_expr
+                                    .name_ref()
+                                    .expect(INTERNAL_ERR)
+                                    .syntax()
+                                    .text_range(),
                                 to.to_string(),
                             );
                         }
@@ -150,42 +164,55 @@ impl Visitor for Runner {
 
         self.upgrader = upgrader;
     }
-}
 
-fn get_struct_name(f: &Function, db: &RootDatabase) -> Option<Name> {
-    let assoc_item = f.clone().as_assoc_item(db)?;
+    fn visit_field_expr(
+        &mut self,
+        field_expr: &ast::FieldExpr,
+        semantics: &Semantics<RootDatabase>,
+    ) {
+        let mut upgrader = self.upgrader.clone();
+        let version = self.get_version().expect(INTERNAL_ERR);
 
-    if let AssocItemContainer::ImplDef(impl_def) = assoc_item.container(db) {
-        if let Adt::Struct(s) = impl_def.target_ty(db).as_adt()? {
-            return Some(s.name(db));
+        for hook in &version.hook_field_expr {
+            hook(&mut upgrader, field_expr, semantics);
         }
-    }
 
-    None
-}
+        if let Some(name_ref) = field_expr.name_ref() {
+            let method = name_ref.text().to_string();
 
-fn full_name(m: &Module, db: &RootDatabase) -> String {
-    let mut ret = vec![];
-    let mut module = *m;
-
-    loop {
-        if let Some(name) = module.name(db) {
-            ret.push(format!("{}", name));
-
-            if let Some(p) = module.parent(db) {
-                module = p;
-            } else {
-                break;
+            // Filter out methods which don't have the same names we are looking for
+            if !version
+                .rename_members
+                .iter()
+                .any(|x| x.1.iter().any(|y| *y.0 == method))
+            {
+                return;
             }
-        } else {
-            break;
+
+            if let Some(f) = semantics.resolve_field(field_expr) {
+                if let Some(name) = self
+                    .preloader
+                    .members
+                    .iter()
+                    .find(|x| *x.0 == f)
+                    .map(|x| x.1)
+                {
+                    if let Some(map) = version.rename_members.get(name) {
+                        if let Some(to) = map.get(&method) {
+                            upgrader.replace(
+                                field_expr
+                                    .name_ref()
+                                    .expect(INTERNAL_ERR)
+                                    .syntax()
+                                    .text_range(),
+                                to.to_string(),
+                            );
+                        }
+                    }
+                }
+            }
         }
-    }
 
-    if let Some(name) = m.krate().display_name(db) {
-        ret.push(format!("{}", name));
+        self.upgrader = upgrader;
     }
-
-    ret.reverse();
-    ret.join("::")
 }

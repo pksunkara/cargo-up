@@ -1,4 +1,5 @@
 use crate::{
+    normalize,
     ra_hir::Semantics,
     ra_ide_db::RootDatabase,
     ra_syntax::ast,
@@ -50,7 +51,7 @@ impl Version {
     }
 
     pub fn peers(mut self, peers: &[&str]) -> Self {
-        self.peers = peers.to_vec().iter().map(|x| x.to_string()).collect();
+        self.peers = peers.to_vec().iter().map(|x| normalize(*x)).collect();
         self
     }
 
