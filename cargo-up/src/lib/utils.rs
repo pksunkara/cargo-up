@@ -14,7 +14,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub(crate) enum Error {
-    #[error("There are no changes in the upgrader for {0}")]
+    #[error("There are no changes in the upgrader for target {0}")]
     NoChanges(String),
     #[error("minimum version of {0} that should be upgraded from is {1}")]
     NotMinimum(String, String),

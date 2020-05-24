@@ -1,0 +1,6 @@
+---
+source: tests/no_version.rs
+expression: out
+---
+There are no changes in the upgrader for target 0.2.1
+

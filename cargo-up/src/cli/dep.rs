@@ -1,6 +1,6 @@
 use crate::utils::{cargo, normalize, Error, Result, INTERNAL_ERR};
 use cargo_metadata::Metadata;
-use clap::Clap;
+use clap::{crate_version, Clap};
 use crates_io_api::SyncClient;
 use semver::Version;
 use std::{
@@ -17,20 +17,33 @@ pub struct Dep {
     dep: String,
 
     /// Specify version to upgrade to if upgrader path is given
-    #[clap(long, hidden = true, requires_all = &["name", "path"])]
+    #[clap(long, hidden = true, requires_all = &["name", "path", "lib-path"])]
     to_version: Option<Version>,
 
     /// Specify path for upgrader
-    #[clap(long, hidden = true, requires_all = &["name", "to-version"], conflicts_with_all = &["version"])]
+    #[clap(long, hidden = true, requires_all = &["name", "to-version", "lib-path"], conflicts_with_all = &["version"])]
     path: Option<String>,
 
     /// Specify name for upgrader if upgrader path is given
-    #[clap(long, hidden = true, requires_all = &["path", "to-version"])]
+    #[clap(long, hidden = true, requires_all = &["path", "to-version", "lib-path"])]
     name: Option<String>,
+
+    /// Specify path for cargo-up library
+    #[clap(long, hidden = true, requires_all = &["path", "name", "to-version"])]
+    lib_path: Option<String>,
 
     /// Specify version of upgrader
     #[clap(short, long)]
     version: Option<Version>,
+}
+
+fn get_path(path: &Option<String>) -> Result<String> {
+    let path = current_dir()?.join(path.as_ref().expect(INTERNAL_ERR));
+
+    Ok(format!(
+        r#"{{ path = "{}" }}"#,
+        path.canonicalize().unwrap().to_string_lossy(),
+    ))
 }
 
 impl Dep {
@@ -46,16 +59,12 @@ impl Dep {
                 id: self.dep.clone(),
             })?;
 
-        let (upgrader, upgrader_version, to_version) = if let Some(name) = &self.name {
-            let path = current_dir()?.join(self.path.as_ref().expect(INTERNAL_ERR));
-
+        let (upgrader, upgrader_version, to_version, lib_version) = if let Some(name) = &self.name {
             (
                 name.to_string(),
-                format!(
-                    r#"{{ path = "{}" }}"#,
-                    path.canonicalize().unwrap().to_string_lossy(),
-                ),
+                get_path(&self.path)?,
                 self.to_version.as_ref().expect(INTERNAL_ERR).to_string(),
+                get_path(&self.lib_path)?,
             )
         } else {
             // Find the upgrader in crates.io
@@ -64,7 +73,7 @@ impl Dep {
 
             let krate = client.get_crate(&upgrader).map_err(|_| Error::NoUpgrader {
                 id: dep.clone(),
-                upgrader: upgrader.clone(),
+                upgrader,
             })?;
 
             (
@@ -74,6 +83,7 @@ impl Dep {
                     .map_or_else(|| krate.crate_data.max_version.clone(), |x| x.to_string()),
                 // pkg.version.to_string(), TODO: Get the next version from crates.io
                 String::from("3.0.0-beta.1"),
+                format!(r#""={}""#, crate_version!()),
             )
         };
 
@@ -96,10 +106,10 @@ impl Dep {
                 [dependencies]
                 log = "0.4"
                 env_logger = "0.7"
-                cargo-up = {{ path = "/Users/pksunkara/Coding/pksunkara/cargo-up/cargo-up" }}
+                cargo-up = {}
                 {} = {}
                 "#,
-                upgrader, upgrader_version
+                lib_version, upgrader, upgrader_version
             ),
         )?;
 

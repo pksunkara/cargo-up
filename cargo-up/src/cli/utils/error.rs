@@ -46,7 +46,7 @@ impl Error {
     }
 
     pub fn print(self, term: &Term) -> io::Result<()> {
-        term.write_str(&RED_BOLD.apply_to("error").to_string())?;
+        term.write_str(&format!("{}: ", RED_BOLD.apply_to("error").to_string()))?;
         term.write_line(&self.color().to_string())?;
         term.flush()
     }

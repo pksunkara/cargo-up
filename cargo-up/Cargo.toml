@@ -64,3 +64,7 @@ members = [
 	"cargo-up-up",
 	"rust-up",
 ]
+
+[dev-dependencies]
+insta = "0.16"
+assert_cmd = "1.0"

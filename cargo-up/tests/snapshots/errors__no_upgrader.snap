@@ -1,0 +1,6 @@
+---
+source: tests/errors.rs
+expression: err
+---
+error: no upgrader upgradee_up found on crates.io for dependency upgradee
+

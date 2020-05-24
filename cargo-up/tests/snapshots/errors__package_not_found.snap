@@ -1,0 +1,6 @@
+---
+source: tests/errors.rs
+expression: err
+---
+error: unable to find package not-found
+
