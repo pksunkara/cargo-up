@@ -1,7 +1,7 @@
 use crate::{
     ra_hir::{Adt, AssocItem, Crate, Field, Function, Module, ModuleDef, ScopeDef},
     ra_ide_db::RootDatabase,
-    utils::INTERNAL_ERR,
+    utils::{INTERNAL_ERR, TERM_ERR},
 };
 use std::collections::HashMap as Map;
 
@@ -18,12 +18,14 @@ impl Preloader {
             return;
         }
 
-        println!("Pre loading {}", name);
+        eprint!("Pre loading {} ... ", name);
+        TERM_ERR.flush().unwrap();
 
         let module = krate.root_module(db).expect(INTERNAL_ERR);
         self.load_module(db, &module, vec![name.to_string()]);
 
         self.visited.push(name.to_string());
+        eprintln!("done");
     }
 
     fn load_module(&mut self, db: &RootDatabase, module: &Module, path: Vec<String>) {

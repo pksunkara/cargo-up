@@ -3,7 +3,7 @@ use crate::{
     ra_ide_db::{symbol_index::SymbolsDatabase, RootDatabase},
     ra_syntax::{ast, AstNode},
     semver::{SemVerError, Version as SemverVersion},
-    utils::{normalize, INTERNAL_ERR, RED_BOLD, TERM_ERR, TERM_OUT, YELLOW, YELLOW_OUT},
+    utils::{normalize, Error, INTERNAL_ERR, TERM_ERR, TERM_OUT},
     Preloader, Upgrader, Version, Visitor,
 };
 use ra_db::SourceDatabaseExt;
@@ -52,12 +52,7 @@ impl Runner {
 
         if let Some(min) = self.minimum.clone() {
             if version <= min {
-                return TERM_ERR.write_line(&format!(
-                    "{}: minimum version of {} that should be upgraded from is {}",
-                    RED_BOLD.apply_to("error"),
-                    YELLOW.apply_to(dep),
-                    YELLOW.apply_to(min),
-                ));
+                return Error::NotMinimum(dep.into(), min.to_string()).print_err();
             }
         }
 
@@ -69,10 +64,7 @@ impl Runner {
             peers.extend(version.peers.clone());
             peers
         } else {
-            return TERM_OUT.write_line(&format!(
-                "There are no changes in the upgrader for {}",
-                YELLOW_OUT.apply_to(self.version.clone())
-            ));
+            return Error::NoChanges(self.version.to_string()).print_out();
         };
 
         // Loop to find and eager load the dep we are upgrading

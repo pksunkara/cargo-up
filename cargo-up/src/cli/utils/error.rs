@@ -35,22 +35,19 @@ impl Error {
     fn color(self) -> Self {
         match self {
             Self::PackageNotFound { id } => Self::PackageNotFound {
-                id: format!("{}", YELLOW.apply_to(id)),
+                id: YELLOW.apply_to(id).to_string(),
             },
             Self::NoUpgrader { id, upgrader } => Self::NoUpgrader {
-                id: format!("{}", YELLOW.apply_to(id)),
-                upgrader: format!("{}", YELLOW.apply_to(upgrader)),
+                id: YELLOW.apply_to(id).to_string(),
+                upgrader: YELLOW.apply_to(upgrader).to_string(),
             },
             _ => self,
         }
     }
 
     pub fn print(self, term: &Term) -> io::Result<()> {
-        term.write_str(&format!("{}: ", RED_BOLD.apply_to("error")))?;
-
-        let msg = format!("{}", self.color());
-
-        term.write_line(&msg)?;
+        term.write_str(&RED_BOLD.apply_to("error").to_string())?;
+        term.write_line(&self.color().to_string())?;
         term.flush()
     }
 }
