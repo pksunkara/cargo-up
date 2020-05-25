@@ -2,9 +2,4 @@
 source: tests/minimum_version.rs
 expression: out
 ---
-{
-    "src/main.rs": TextEdit {
-        indels: [],
-    },
-}
 

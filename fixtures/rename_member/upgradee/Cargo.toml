@@ -1,0 +1,5 @@
+[package]
+name = "upgradee"
+version = "0.2.0"
+authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
+edition = "2018"

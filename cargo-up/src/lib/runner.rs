@@ -6,10 +6,15 @@ use crate::{
     utils::{normalize, Error, INTERNAL_ERR, TERM_ERR, TERM_OUT},
     Preloader, Upgrader, Version, Visitor,
 };
-use ra_db::SourceDatabaseExt;
+use ra_db::{FileId, SourceDatabaseExt};
 use ra_text_edit::TextEdit;
 use rust_analyzer::cli::load_cargo;
-use std::{collections::BTreeMap as Map, io::Result as IoResult, path::Path};
+use std::{
+    collections::BTreeMap as Map,
+    fs::{read_to_string, write},
+    io::Result as IoResult,
+    path::Path,
+};
 
 pub struct Runner {
     pub(crate) minimum: Option<SemverVersion>,
@@ -43,20 +48,26 @@ impl Runner {
 
 impl Runner {
     #[doc(hidden)]
-    pub fn run(&mut self, root: &Path, dep: &str, version: SemverVersion) -> IoResult<()> {
-        let (host, _) = load_cargo(root, true, false).unwrap();
+    pub fn run(
+        &mut self,
+        root: &Path,
+        dep: &str,
+        from: SemverVersion,
+        to: SemverVersion,
+    ) -> IoResult<()> {
+        let (host, source_roots) = load_cargo(root, true, false).unwrap();
         let db = host.raw_database();
 
-        let mut changes = Map::<String, TextEdit>::new();
+        let mut changes = Map::<FileId, TextEdit>::new();
         let semantics = Semantics::new(db);
 
         if let Some(min) = self.minimum.clone() {
-            if version <= min {
+            if from < min {
                 return Error::NotMinimum(dep.into(), min.to_string()).print_err();
             }
         }
 
-        self.version = version;
+        self.version = to;
         let version = self.get_version();
 
         let peers = if let Some(version) = version {
@@ -95,16 +106,25 @@ impl Runner {
 
                 self.visit(source_file.syntax(), &semantics);
 
-                changes.insert(
-                    db.file_relative_path(file_id).as_str().to_string(),
-                    self.upgrader.finish(),
-                );
+                changes.insert(file_id, self.upgrader.finish());
             }
         }
 
-        // Apply chnages
-        // TODO:
-        println!("{:#?}", changes);
+        // Apply changes
+        // println!("{:#?}", changes);
+        for (file_id, edit) in changes {
+            let full_path = db.file_relative_path(file_id).to_path(
+                source_roots
+                    .get(&db.file_source_root(file_id))
+                    .expect(INTERNAL_ERR)
+                    .path(),
+            );
+
+            let mut file_text = read_to_string(&full_path)?;
+
+            edit.apply(&mut file_text);
+            write(&full_path, file_text)?;
+        }
 
         TERM_ERR.flush()?;
         TERM_OUT.flush()?;

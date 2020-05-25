@@ -16,6 +16,10 @@ pub struct Dep {
     /// Dependency name
     dep: String,
 
+    /// Specify version of upgrader
+    #[clap(short, long)]
+    version: Option<Version>,
+
     /// Specify version to upgrade to if upgrader path is given
     #[clap(long, hidden = true, requires_all = &["name", "path", "lib-path"])]
     to_version: Option<Version>,
@@ -32,9 +36,9 @@ pub struct Dep {
     #[clap(long, hidden = true, requires_all = &["path", "name", "to-version"])]
     lib_path: Option<String>,
 
-    /// Specify version of upgrader
-    #[clap(short, long)]
-    version: Option<Version>,
+    /// Suppress cargo build output
+    #[clap(long, hidden = true)]
+    suppress_cargo_output: bool,
 }
 
 fn get_path(path: &Option<String>) -> Result<String> {
@@ -81,7 +85,7 @@ impl Dep {
                 self.version
                     .as_ref()
                     .map_or_else(|| krate.crate_data.max_version.clone(), |x| x.to_string()),
-                // pkg.version.to_string(), TODO: Get the next version from crates.io
+                // TODO: Get the next version from crates.io
                 String::from("3.0.0-beta.1"),
                 format!(r#""={}""#, crate_version!()),
             )
@@ -134,18 +138,20 @@ impl Dep {
                         Path::new("{}"),
                         "{}",
                         Version::parse("{}").unwrap(),
+                        Version::parse("{}").unwrap(),
                     ).unwrap();
                 }}
                 "#,
                 &upgrader,
                 &metadata.workspace_root.to_string_lossy(),
                 &dep,
+                pkg.version.to_string(),
                 &to_version,
             ),
         )?;
 
         // Execute the upgrader
-        let (_, err) = cargo(&cache_dir, &["build"])?;
+        let (_, err) = cargo(&cache_dir, &["build"], !self.suppress_cargo_output)?;
 
         if !err.contains("Finished") {
             panic!("unable to build");

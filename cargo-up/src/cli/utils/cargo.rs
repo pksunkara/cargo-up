@@ -5,7 +5,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-pub fn cargo<'a>(root: &PathBuf, args: &[&'a str]) -> Result<(String, String)> {
+pub fn cargo<'a>(root: &PathBuf, args: &[&'a str], out: bool) -> Result<(String, String)> {
     let mut args = args.to_vec();
 
     if TERM_ERR.features().colors_supported() {
@@ -30,7 +30,10 @@ pub fn cargo<'a>(root: &PathBuf, args: &[&'a str]) -> Result<(String, String)> {
         for line in BufReader::new(stderr).lines() {
             let line = line?;
 
-            eprintln!("{}", line);
+            if out {
+                eprintln!("{}", line);
+            }
+
             output_stderr.push(line);
         }
     }
