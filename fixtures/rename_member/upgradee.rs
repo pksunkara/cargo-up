@@ -1,3 +1,3 @@
 pub struct Struct {
-    member: bool,
+    pub member: bool,
 }

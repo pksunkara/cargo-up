@@ -8,7 +8,11 @@ fn main() {
     let mut a = Struct { member: true };
 
     a.member = false;
+    app(&a);
+}
 
-    println!("{}", a.member);
+fn app(v: &Struct) {
+    let v = v.member;
+    println!("{}", v);
 }
 

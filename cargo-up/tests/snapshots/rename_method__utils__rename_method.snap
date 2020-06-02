@@ -5,14 +5,14 @@ expression: file_content
 use upgradee::Struct;
 
 fn main() {
-    let mut a = Struct { member: true };
+    let a = Struct {};
 
-    a.new_name = false;
+    a.print_err();
+
     app(&a);
 }
 
 fn app(v: &Struct) {
-    let v = v.new_name;
-    println!("{}", v);
+    v.print_err();
 }
 

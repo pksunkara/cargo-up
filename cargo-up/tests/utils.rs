@@ -1,12 +1,12 @@
+#![allow(unused)]
 use assert_cmd::Command;
 use insta::assert_snapshot;
 use std::{
-    fs::{read_to_string, write},
+    fs::{copy, read_to_string, write},
     path::PathBuf,
     str::from_utf8,
 };
 
-#[allow(dead_code)]
 pub fn run(dir: &str, args: &[&str]) -> (String, String) {
     let output = Command::cargo_bin("cargo-up")
         .unwrap()
@@ -21,7 +21,6 @@ pub fn run(dir: &str, args: &[&str]) -> (String, String) {
     (out.to_string(), err.to_string())
 }
 
-#[allow(dead_code)]
 pub fn run_out(dir: &str, args: &[&str]) -> String {
     let (out, err) = run(dir, args);
 
@@ -29,7 +28,6 @@ pub fn run_out(dir: &str, args: &[&str]) -> String {
     out
 }
 
-#[allow(dead_code)]
 pub fn run_err(dir: &str, args: &[&str]) -> String {
     let (out, err) = run(dir, args);
 
@@ -37,13 +35,40 @@ pub fn run_err(dir: &str, args: &[&str]) -> String {
     err
 }
 
-#[allow(dead_code)]
-pub fn run_upgrader(dir: &str, version: &str) -> (String, String) {
+pub fn run_upgrader(dir: &str, version: &str, generate: bool) -> (String, String) {
     let mut fixture_on = PathBuf::new();
 
     fixture_on.push("..");
     fixture_on.push("fixtures");
-    fixture_on.push(dir);
+
+    if generate {
+        let mut from = fixture_on.clone();
+        from.push(dir);
+
+        fixture_on.push("_run");
+        let mut to = fixture_on.clone();
+
+        from.push("on.rs");
+        to.push("on");
+        to.push("src");
+        to.push("main.rs");
+
+        copy(&from, &to).unwrap();
+
+        from.pop();
+        from.push("upgradee.rs");
+        to.pop();
+        to.pop();
+        to.pop();
+        to.push("upgradee");
+        to.push("src");
+        to.push("lib.rs");
+
+        copy(&from, &to).unwrap();
+    } else {
+        fixture_on.push(dir);
+    }
+
     fixture_on.push("on");
 
     let on = fixture_on.clone();

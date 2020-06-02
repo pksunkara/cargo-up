@@ -1,0 +1,36 @@
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, synchronize]
+jobs:
+  ci:
+    name: CI
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Done
+        run: exit 0
+  test:
+    name: Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        rust: [stable]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --features cli --manifest-path cargo-up/Cargo.toml

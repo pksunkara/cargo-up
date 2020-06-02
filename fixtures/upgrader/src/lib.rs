@@ -7,7 +7,8 @@ pub fn runner() -> Runner {
         .version(
             Version::new("0.3.0")
                 .unwrap()
-                .rename_members("upgradee::Struct", &[["member", "new_name"]]),
+                .rename_members("upgradee::Struct", &[["member", "new_name"]])
+                .rename_methods("upgradee::Struct", &[["print", "print_err"]]),
         )
         .version(
             Version::new("0.4.0")

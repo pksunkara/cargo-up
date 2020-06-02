@@ -2,8 +2,8 @@ use insta::assert_snapshot;
 mod utils;
 
 #[test]
-fn test_no_version() {
-    let (out, err) = utils::run_upgrader("rename_member", "0.2.1", true);
+fn test_rename_method() {
+    let (out, err) = utils::run_upgrader("rename_method", "0.3.0", true);
     assert_snapshot!(out);
     assert_snapshot!(err);
 }

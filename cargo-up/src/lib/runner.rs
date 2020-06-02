@@ -111,7 +111,6 @@ impl Runner {
         }
 
         // Apply changes
-        // println!("{:#?}", changes);
         for (file_id, edit) in changes {
             let full_path = db.file_relative_path(file_id).to_path(
                 source_roots
