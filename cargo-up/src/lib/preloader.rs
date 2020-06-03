@@ -29,14 +29,25 @@ impl Preloader {
     }
 
     fn load_module(&mut self, db: &RootDatabase, module: &Module, path: Vec<String>) {
-        // Load struct members
         for item in module.scope(db, None) {
-            if let ScopeDef::ModuleDef(ModuleDef::Adt(Adt::Struct(s))) = item.1 {
-                let name = format!("{}::{}", path.join("::"), s.name(db));
+            match item.1 {
+                // Load struct members
+                ScopeDef::ModuleDef(ModuleDef::Adt(Adt::Struct(s))) => {
+                    let name = format!("{}::{}", path.join("::"), s.name(db));
 
-                for field in s.fields(db) {
-                    self.members.insert(field, name.clone());
+                    for field in s.fields(db) {
+                        self.members.insert(field, name.clone());
+                    }
                 }
+                // Load union memebrs
+                ScopeDef::ModuleDef(ModuleDef::Adt(Adt::Union(u))) => {
+                    let name = format!("{}::{}", path.join("::"), u.name(db));
+
+                    for field in u.fields(db) {
+                        self.members.insert(field, name.clone());
+                    }
+                }
+                _ => {}
             }
         }
 
@@ -45,9 +56,29 @@ impl Preloader {
             let target_trait = impl_def.target_trait(db);
 
             match target_ty.as_adt() {
-                // Load struct methods
+                // Load struct instance methods
                 Some(Adt::Struct(s)) if target_trait.is_none() => {
                     let name = format!("{}::{}", path.join("::"), s.name(db));
+
+                    for assoc_item in impl_def.items(db) {
+                        if let AssocItem::Function(f) = assoc_item {
+                            self.methods.insert(f, name.clone());
+                        }
+                    }
+                }
+                // Load enum instance methods
+                Some(Adt::Enum(e)) if target_trait.is_none() => {
+                    let name = format!("{}::{}", path.join("::"), e.name(db));
+
+                    for assoc_item in impl_def.items(db) {
+                        if let AssocItem::Function(f) = assoc_item {
+                            self.methods.insert(f, name.clone());
+                        }
+                    }
+                }
+                // Load union instance methods
+                Some(Adt::Union(u)) if target_trait.is_none() => {
+                    let name = format!("{}::{}", path.join("::"), u.name(db));
 
                     for assoc_item in impl_def.items(db) {
                         if let AssocItem::Function(f) = assoc_item {

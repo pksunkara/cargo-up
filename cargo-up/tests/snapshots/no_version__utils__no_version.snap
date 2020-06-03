@@ -2,17 +2,43 @@
 source: tests/utils.rs
 expression: file_content
 ---
-use upgradee::Struct;
+use upgradee::{Struct, Union};
+
+type S = Struct;
+type U = Union;
 
 fn main() {
-    let mut a = Struct { member: true };
+    let mut a = Struct {
+        struct_member: true,
+    };
 
-    a.member = false;
-    app(&a);
+    a.struct_member = false;
+    s(&a);
+
+    let b = S {
+        struct_member: false,
+    };
+    s(&b);
+
+    let mut c = Union { union_member: true };
+
+    c.union_member = true;
+
+    let z = |v: &Union| {
+        let v = unsafe { v.union_member };
+        println!("{}", v);
+    };
+
+    z(&c);
+
+    let d = U {
+        union_member: false,
+    };
+    z(&d);
 }
 
-fn app(v: &Struct) {
-    let v = v.member;
+fn s(v: &Struct) {
+    let v = v.struct_member;
     println!("{}", v);
 }
 

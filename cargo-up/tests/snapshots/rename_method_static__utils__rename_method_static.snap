@@ -1,0 +1,21 @@
+---
+source: tests/utils.rs
+expression: file_content
+---
+use upgradee::{Enum, Struct, Union};
+
+type S = Struct;
+type E = Enum;
+type U = Union;
+
+fn main() {
+    let a = Struct::print_err();
+    let b = S::print_err();
+
+    let c = Enum::talk_err();
+    let d = E::talk_err();
+
+    let e = Union::eat_err();
+    let f = U::eat_err();
+}
+

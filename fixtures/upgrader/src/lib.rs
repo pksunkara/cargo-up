@@ -7,8 +7,11 @@ pub fn runner() -> Runner {
         .version(
             Version::new("0.3.0")
                 .unwrap()
-                .rename_members("upgradee::Struct", &[["member", "new_name"]])
-                .rename_methods("upgradee::Struct", &[["print", "print_err"]]),
+                .rename_members("upgradee::Struct", &[["struct_member", "new_s_member"]])
+                .rename_members("upgradee::Union", &[["union_member", "new_u_member"]])
+                .rename_methods("upgradee::Struct", &[["print", "print_err"]])
+                .rename_methods("upgradee::Enum", &[["talk", "talk_err"]])
+                .rename_methods("upgradee::Union", &[["eat", "eat_err"]]),
         )
         .version(
             Version::new("0.4.0")

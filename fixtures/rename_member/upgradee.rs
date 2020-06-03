@@ -1,3 +1,7 @@
 pub struct Struct {
-    pub member: bool,
+    pub struct_member: bool,
+}
+
+pub union Union {
+    pub union_member: bool,
 }

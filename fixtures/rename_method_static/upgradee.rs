@@ -1,7 +1,7 @@
 pub struct Struct {}
 
 impl Struct {
-    pub fn print(&self) {}
+    pub fn print() {}
 }
 
 pub enum Enum {
@@ -9,7 +9,7 @@ pub enum Enum {
 }
 
 impl Enum {
-    pub fn talk(&self) {}
+    pub fn talk() {}
 }
 
 pub union Union {
@@ -17,5 +17,5 @@ pub union Union {
 }
 
 impl Union {
-    pub fn eat(&self) {}
+    pub fn eat() {}
 }

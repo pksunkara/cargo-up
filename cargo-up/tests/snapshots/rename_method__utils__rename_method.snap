@@ -2,17 +2,47 @@
 source: tests/utils.rs
 expression: file_content
 ---
-use upgradee::Struct;
+use upgradee::{Enum, Struct, Union};
+
+type S = Struct;
+type E = Enum;
+type U = Union;
 
 fn main() {
     let a = Struct {};
 
     a.print_err();
 
-    app(&a);
-}
+    let z = |v: Struct| v.print_err();
 
-fn app(v: &Struct) {
-    v.print_err();
+    z(a);
+
+    let c = S {};
+
+    c.print_err();
+
+    let b = Enum::None;
+
+    b.talk_err();
+
+    let z = |v: Enum| v.talk_err();
+
+    z(b);
+
+    let d = E::None;
+
+    d.talk_err();
+
+    let e = Union { y: false };
+
+    e.eat();
+
+    let z = |v: Union| v.eat_err();
+
+    z(e);
+
+    let f = U { y: false };
+
+    f.eat_err();
 }
 
