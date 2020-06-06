@@ -37,8 +37,16 @@ pub trait Visitor {
                 &ast::FieldExpr::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
+            SyntaxKind::RECORD_LIT => self.visit_record_lit(
+                &ast::RecordLit::cast(node.clone()).expect(INTERNAL_ERR),
+                &semantics,
+            ),
             SyntaxKind::RECORD_FIELD => self.visit_record_field(
                 &ast::RecordField::cast(node.clone()).expect(INTERNAL_ERR),
+                &semantics,
+            ),
+            SyntaxKind::RECORD_FIELD_PAT => self.visit_record_field_pat(
+                &ast::RecordFieldPat::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
             _ => {}
@@ -54,5 +62,7 @@ pub trait Visitor {
     visit!(visit_call_expr, CallExpr);
     visit!(visit_path_expr, PathExpr);
     visit!(visit_field_expr, FieldExpr);
+    visit!(visit_record_lit, RecordLit);
     visit!(visit_record_field, RecordField);
+    visit!(visit_record_field_pat, RecordFieldPat);
 }

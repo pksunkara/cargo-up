@@ -30,7 +30,9 @@ alias!(MethodCallExpr);
 alias!(CallExpr);
 alias!(PathExpr);
 alias!(FieldExpr);
+alias!(RecordLit);
 alias!(RecordField);
+alias!(RecordFieldPat);
 
 pub struct Version {
     pub(crate) version: SemverVersion,
@@ -41,7 +43,9 @@ pub struct Version {
     pub(crate) hook_call_expr: Vec<Box<CallExpr>>,
     pub(crate) hook_path_expr: Vec<Box<PathExpr>>,
     pub(crate) hook_field_expr: Vec<Box<FieldExpr>>,
+    pub(crate) hook_record_lit: Vec<Box<RecordLit>>,
     pub(crate) hook_record_field: Vec<Box<RecordField>>,
+    pub(crate) hook_record_field_pat: Vec<Box<RecordFieldPat>>,
 }
 
 impl Version {
@@ -55,7 +59,9 @@ impl Version {
             hook_call_expr: vec![],
             hook_path_expr: vec![],
             hook_field_expr: vec![],
+            hook_record_lit: vec![],
             hook_record_field: vec![],
+            hook_record_field_pat: vec![],
         })
     }
 
@@ -88,5 +94,7 @@ impl Version {
     hook!(hook_call_expr, CallExpr);
     hook!(hook_path_expr, PathExpr);
     hook!(hook_field_expr, FieldExpr);
+    hook!(hook_record_lit, RecordLit);
     hook!(hook_record_field, RecordField);
+    hook!(hook_record_field_pat, RecordFieldPat);
 }

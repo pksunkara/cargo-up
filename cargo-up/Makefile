@@ -6,3 +6,9 @@ clap:
 	dep clap \
 	--name clap_up --to-version 3.0.0-beta.1 --lib-path . \
 	--path ../../../clap-rs/clap/clap_up \
+
+run:
+	cargo run --features cli up --manifest-path ../fixtures/_run/on/Cargo.toml \
+	dep upgradee \
+	--name upgrader --to-version 0.3.0 --lib-path . \
+	--path ../fixtures/upgrader \

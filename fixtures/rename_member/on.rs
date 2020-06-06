@@ -31,6 +31,26 @@ fn main() {
         union_member: false,
     };
     z(&d);
+
+    let struct_member = false;
+    let mut e = Struct { struct_member };
+
+    let union_member = false;
+    let mut f = Union { union_member };
+
+    let Struct { struct_member } = e.clone();
+    let Struct { struct_member: g } = e.clone();
+    let Struct {
+        ref mut struct_member,
+    } = e;
+
+    unsafe {
+        let Union { union_member } = f.clone();
+        let Union { union_member: h } = f.clone();
+        let Union {
+            ref mut union_member,
+        } = f;
+    }
 }
 
 fn s(v: &Struct) {

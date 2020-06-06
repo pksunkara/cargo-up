@@ -9,14 +9,14 @@ type U = Union;
 
 fn main() {
     let mut a = Struct {
-        struct_member: true,
+        new_s_member: true,
     };
 
     a.new_s_member = false;
     s(&a);
 
     let b = S {
-        struct_member: false,
+        new_s_member: false,
     };
     s(&b);
 
@@ -32,9 +32,29 @@ fn main() {
     z(&c);
 
     let d = U {
-        union_member: false,
+        new_u_member: false,
     };
     z(&d);
+
+    let struct_member = false;
+    let mut e = Struct { new_s_member: struct_member };
+
+    let union_member = false;
+    let mut f = Union { union_member };
+
+    let Struct { new_s_member: struct_member } = e.clone();
+    let Struct { new_s_member: g } = e.clone();
+    let Struct {
+        new_s_member: ref mut struct_member,
+    } = e;
+
+    unsafe {
+        let Union { union_member } = f.clone();
+        let Union { union_member: h } = f.clone();
+        let Union {
+            ref mut union_member,
+        } = f;
+    }
 }
 
 fn s(v: &Struct) {
