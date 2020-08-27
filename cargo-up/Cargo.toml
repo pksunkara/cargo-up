@@ -24,7 +24,6 @@ thiserror = "1.0"
 console = "0.11"
 
 # required by lib
-cargo-up-derive = { path = "./cargo-up-derive", version = "0.0.1", optional = true }
 ra_ap_ide_db = { version = "=0.0.6", optional = true }
 ra_ap_syntax = { version = "=0.0.6", optional = true }
 ra_ap_hir = { version = "=0.0.6", optional = true }
@@ -43,7 +42,6 @@ lto = "thin"
 [features]
 default = ["lib"]
 lib = [
-	"cargo-up-derive",
 	"ra_ap_ide_db",
 	"ra_ap_syntax",
 	"ra_ap_hir",
@@ -60,7 +58,6 @@ docs = []
 
 [workspace]
 members = [
-	"cargo-up-derive",
 	"cargo-up-up",
 	"rust-up",
 ]
