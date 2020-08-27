@@ -25,12 +25,12 @@ console = "0.11"
 
 # required by lib
 cargo-up-derive = { path = "./cargo-up-derive", version = "0.0.1", optional = true }
-ra_ide_db = { path = "../../rust-analyzer/crates/ra_ide_db", optional = true }
-ra_syntax = { path = "../../rust-analyzer/crates/ra_syntax", optional = true }
-ra_hir = { path = "../../rust-analyzer/crates/ra_hir", optional = true }
-ra_text_edit = { path = "../../rust-analyzer/crates/ra_text_edit", optional = true }
-ra_db = { path = "../../rust-analyzer/crates/ra_db", optional = true }
-rust-analyzer = { path = "../../rust-analyzer/crates/rust-analyzer", optional = true }
+ra_ap_ide_db = { version = "=0.0.6", optional = true }
+ra_ap_syntax = { version = "=0.0.6", optional = true }
+ra_ap_hir = { version = "=0.0.6", optional = true }
+ra_ap_text_edit = { version = "=0.0.6", optional = true }
+ra_ap_base_db = { version = "=0.0.6", optional = true }
+ra_ap_rust-analyzer = { version = "=0.0.6", optional = true }
 
 # required by bin
 clap = { version = "=3.0.0-beta.1", optional = true }
@@ -44,12 +44,12 @@ lto = "thin"
 default = ["lib"]
 lib = [
 	"cargo-up-derive",
-	"ra_ide_db",
-	"ra_syntax",
-	"ra_hir",
-	"ra_text_edit",
-	"ra_db",
-	"rust-analyzer"
+	"ra_ap_ide_db",
+	"ra_ap_syntax",
+	"ra_ap_hir",
+	"ra_ap_text_edit",
+	"ra_ap_base_db",
+	"ra_ap_rust-analyzer"
 ]
 cli = [
 	"clap",

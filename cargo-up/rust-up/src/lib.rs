@@ -1,7 +1,7 @@
 use cargo_up::{
-    ra_hir::Semantics,
-    ra_ide_db::RootDatabase,
-    ra_syntax::ast::{self, AstNode},
+    ra_ap_hir::Semantics,
+    ra_ap_ide_db::RootDatabase,
+    ra_ap_syntax::ast::{self, AstNode},
     Runner, Upgrader, Version,
 };
 

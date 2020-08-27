@@ -5,7 +5,7 @@ use crates_io_api::SyncClient;
 use semver::Version;
 use std::{
     env::{current_dir, var_os},
-    fs::{create_dir_all, write},
+    fs::{create_dir_all, remove_file, write},
     path::PathBuf,
     process::Command,
 };
@@ -94,6 +94,8 @@ impl Dep {
         // Write the upgrade runner
         let cargo_home = PathBuf::from(var_os("CARGO_HOME").ok_or(Error::NoCargoHome)?);
         let cache_dir = cargo_home.join("cargo-up-cache");
+
+        remove_file(cache_dir.join("Cargo.lock"))?;
 
         create_dir_all(cache_dir.join("src"))?;
 

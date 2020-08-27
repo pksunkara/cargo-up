@@ -20,12 +20,12 @@ fn main() {
     };
     s(&b);
 
-    let mut c = Union { union_member: true };
+    let mut c = Union { new_u_member: true };
 
-    c.union_member = true;
+    c.new_u_member = true;
 
     let z = |v: &Union| {
-        let v = unsafe { v.union_member };
+        let v = unsafe { v.new_u_member };
         println!("{}", v);
     };
 
@@ -40,7 +40,7 @@ fn main() {
     let mut e = Struct { new_s_member: struct_member };
 
     let union_member = false;
-    let mut f = Union { union_member };
+    let mut f = Union { new_u_member: union_member };
 
     let Struct { new_s_member: struct_member } = e.clone();
     let Struct { new_s_member: g } = e.clone();
@@ -49,10 +49,10 @@ fn main() {
     } = e;
 
     unsafe {
-        let Union { union_member } = f.clone();
-        let Union { union_member: h } = f.clone();
+        let Union { new_u_member: union_member } = f.clone();
+        let Union { new_u_member: h } = f.clone();
         let Union {
-            ref mut union_member,
+            new_u_member: ref mut union_member,
         } = f;
     }
 }

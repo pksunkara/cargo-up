@@ -1,4 +1,4 @@
-use ra_text_edit::{TextEdit, TextEditBuilder, TextRange, TextSize};
+use ra_ap_text_edit::{TextEdit, TextEditBuilder, TextRange, TextSize};
 
 #[derive(Default, Debug, Clone)]
 pub struct Upgrader {

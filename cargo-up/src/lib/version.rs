@@ -1,7 +1,7 @@
 use crate::{
-    ra_hir::Semantics,
-    ra_ide_db::RootDatabase,
-    ra_syntax::ast,
+    ra_ap_hir::Semantics,
+    ra_ap_ide_db::RootDatabase,
+    ra_ap_syntax::ast,
     semver::{SemVerError, Version as SemverVersion},
     utils::normalize,
     Upgrader,
@@ -30,9 +30,9 @@ alias!(MethodCallExpr);
 alias!(CallExpr);
 alias!(PathExpr);
 alias!(FieldExpr);
-alias!(RecordLit);
-alias!(RecordField);
-alias!(RecordFieldPat);
+alias!(RecordExpr);
+alias!(RecordExprField);
+alias!(RecordPatField);
 
 pub struct Version {
     pub(crate) version: SemverVersion,
@@ -43,9 +43,9 @@ pub struct Version {
     pub(crate) hook_call_expr: Vec<Box<CallExpr>>,
     pub(crate) hook_path_expr: Vec<Box<PathExpr>>,
     pub(crate) hook_field_expr: Vec<Box<FieldExpr>>,
-    pub(crate) hook_record_lit: Vec<Box<RecordLit>>,
-    pub(crate) hook_record_field: Vec<Box<RecordField>>,
-    pub(crate) hook_record_field_pat: Vec<Box<RecordFieldPat>>,
+    pub(crate) hook_record_expr: Vec<Box<RecordExpr>>,
+    pub(crate) hook_record_expr_field: Vec<Box<RecordExprField>>,
+    pub(crate) hook_record_pat_field: Vec<Box<RecordPatField>>,
 }
 
 impl Version {
@@ -59,9 +59,9 @@ impl Version {
             hook_call_expr: vec![],
             hook_path_expr: vec![],
             hook_field_expr: vec![],
-            hook_record_lit: vec![],
-            hook_record_field: vec![],
-            hook_record_field_pat: vec![],
+            hook_record_expr: vec![],
+            hook_record_expr_field: vec![],
+            hook_record_pat_field: vec![],
         })
     }
 
@@ -94,7 +94,7 @@ impl Version {
     hook!(hook_call_expr, CallExpr);
     hook!(hook_path_expr, PathExpr);
     hook!(hook_field_expr, FieldExpr);
-    hook!(hook_record_lit, RecordLit);
-    hook!(hook_record_field, RecordField);
-    hook!(hook_record_field_pat, RecordFieldPat);
+    hook!(hook_record_expr, RecordExpr);
+    hook!(hook_record_expr_field, RecordExprField);
+    hook!(hook_record_pat_field, RecordPatField);
 }

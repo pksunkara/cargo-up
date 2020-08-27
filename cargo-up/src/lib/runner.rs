@@ -1,14 +1,14 @@
 use crate::{
-    ra_hir::{AssocItem, Crate, PathResolution, Semantics},
-    ra_ide_db::{symbol_index::SymbolsDatabase, RootDatabase},
-    ra_syntax::{ast, AstNode},
+    ra_ap_hir::{AssocItem, Crate, PathResolution, Semantics},
+    ra_ap_ide_db::{symbol_index::SymbolsDatabase, RootDatabase},
+    ra_ap_syntax::{ast, AstNode},
     semver::{SemVerError, Version as SemverVersion},
     utils::{normalize, Error, INTERNAL_ERR, TERM_ERR, TERM_OUT},
     Preloader, Upgrader, Version, Visitor,
 };
-use ra_db::{FileId, SourceDatabaseExt};
-use ra_text_edit::TextEdit;
-use rust_analyzer::cli::load_cargo;
+use ra_ap_base_db::{FileId, SourceDatabaseExt};
+use ra_ap_rust_analyzer::cli::load_cargo;
+use ra_ap_text_edit::TextEdit;
 use std::{
     collections::BTreeMap as Map,
     fs::{read_to_string, write},
@@ -57,7 +57,7 @@ impl Runner {
         from: SemverVersion,
         to: SemverVersion,
     ) -> IoResult<()> {
-        let (host, source_roots) = load_cargo(root, true, false).unwrap();
+        let (host, vfs) = load_cargo(root, true, false).unwrap();
         let db = host.raw_database();
 
         let mut changes = Map::<FileId, TextEdit>::new();
@@ -103,7 +103,7 @@ impl Runner {
         for source_root_id in db.local_roots().iter() {
             let source_root = db.source_root(*source_root_id);
 
-            for file_id in source_root.walk() {
+            for file_id in source_root.iter() {
                 self.current_file = Some(file_id);
                 let source_file = semantics.parse(file_id);
                 // println!("{:#?}", source_file.syntax());
@@ -116,12 +116,8 @@ impl Runner {
 
         // Apply changes
         for (file_id, edit) in changes {
-            let full_path = db.file_relative_path(file_id).to_path(
-                source_roots
-                    .get(&db.file_source_root(file_id))
-                    .expect(INTERNAL_ERR)
-                    .path(),
-            );
+            let full_path = vfs.file_path(file_id);
+            let full_path = full_path.as_path().expect(INTERNAL_ERR);
 
             let mut file_text = read_to_string(&full_path)?;
 
@@ -293,36 +289,37 @@ impl Visitor for Runner {
         self.upgrader = upgrader;
     }
 
-    fn visit_record_lit(
+    fn visit_record_expr(
         &mut self,
-        record_lit: &ast::RecordLit,
+        record_expr: &ast::RecordExpr,
         semantics: &Semantics<RootDatabase>,
     ) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
-        for hook in &version.hook_record_lit {
-            hook(&mut upgrader, record_lit, semantics);
+        for hook in &version.hook_record_expr {
+            hook(&mut upgrader, record_expr, semantics);
         }
 
         self.upgrader = upgrader;
     }
 
-    fn visit_record_field(
+    fn visit_record_expr_field(
         &mut self,
-        record_field: &ast::RecordField,
+        record_expr_field: &ast::RecordExprField,
         semantics: &Semantics<RootDatabase>,
     ) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
-        for hook in &version.hook_record_field {
-            hook(&mut upgrader, record_field, semantics);
+        for hook in &version.hook_record_expr_field {
+            hook(&mut upgrader, record_expr_field, semantics);
         }
 
-        if let Some(true) = Self::check_name_ref(record_field.field_name(), &version.rename_members)
+        if let Some(true) =
+            Self::check_name_ref(record_expr_field.field_name(), &version.rename_members)
         {
-            if let Some(f) = semantics.resolve_record_field(record_field) {
+            if let Some(f) = semantics.resolve_record_field(record_expr_field) {
                 if let Some(name) = self
                     .preloader
                     .members
@@ -331,13 +328,15 @@ impl Visitor for Runner {
                     .map(|x| x.1)
                 {
                     if let Some(map) = version.rename_members.get(name) {
-                        if let Some(name_ref) = record_field.name_ref() {
+                        if let Some(name_ref) = record_expr_field.name_ref() {
                             let member_name = name_ref.text().to_string();
 
                             if let Some(to) = map.get(&member_name) {
                                 upgrader.replace(name_ref.syntax().text_range(), to.to_string());
                             }
-                        } else if let Some(ast::Expr::PathExpr(path_expr)) = record_field.expr() {
+                        } else if let Some(ast::Expr::PathExpr(path_expr)) =
+                            record_expr_field.expr()
+                        {
                             let member_name = path_expr
                                 .path()
                                 .expect(INTERNAL_ERR)
@@ -363,22 +362,22 @@ impl Visitor for Runner {
         self.upgrader = upgrader;
     }
 
-    fn visit_record_field_pat(
+    fn visit_record_pat_field(
         &mut self,
-        record_field_pat: &ast::RecordFieldPat,
+        record_pat_field: &ast::RecordPatField,
         semantics: &Semantics<RootDatabase>,
     ) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
-        for hook in &version.hook_record_field_pat {
-            hook(&mut upgrader, record_field_pat, semantics);
+        for hook in &version.hook_record_pat_field {
+            hook(&mut upgrader, record_pat_field, semantics);
         }
 
         if let Some(true) =
-            Self::check_name_or_name_ref(record_field_pat.field_name(), &version.rename_members)
+            Self::check_name_or_name_ref(record_pat_field.field_name(), &version.rename_members)
         {
-            if let Some(f) = semantics.resolve_record_field_pat(record_field_pat) {
+            if let Some(f) = semantics.resolve_record_field_pat(record_pat_field) {
                 if let Some(name) = self
                     .preloader
                     .members
@@ -387,14 +386,14 @@ impl Visitor for Runner {
                     .map(|x| x.1)
                 {
                     if let Some(map) = version.rename_members.get(name) {
-                        match record_field_pat.field_name() {
+                        match record_pat_field.field_name() {
                             Some(ast::NameOrNameRef::Name(name)) => {
                                 let member_name = name.text().to_string();
 
                                 if let Some(to) = map.get(&member_name) {
                                     upgrader.replace(
-                                        record_field_pat.syntax().text_range(),
-                                        format!("{}: {}", to, record_field_pat),
+                                        record_pat_field.syntax().text_range(),
+                                        format!("{}: {}", to, record_pat_field),
                                     );
                                 }
                             }

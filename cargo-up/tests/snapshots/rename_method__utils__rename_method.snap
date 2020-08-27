@@ -35,7 +35,7 @@ fn main() {
 
     let e = Union { y: false };
 
-    e.eat();
+    e.eat_err();
 
     let z = |v: Union| v.eat_err();
 

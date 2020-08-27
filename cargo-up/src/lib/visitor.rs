@@ -1,7 +1,7 @@
 use crate::{
-    ra_hir::Semantics,
-    ra_ide_db::RootDatabase,
-    ra_syntax::{
+    ra_ap_hir::Semantics,
+    ra_ap_ide_db::RootDatabase,
+    ra_ap_syntax::{
         ast::{self, AstNode},
         SyntaxKind, SyntaxNode,
     },
@@ -37,16 +37,16 @@ pub trait Visitor {
                 &ast::FieldExpr::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
-            SyntaxKind::RECORD_LIT => self.visit_record_lit(
-                &ast::RecordLit::cast(node.clone()).expect(INTERNAL_ERR),
+            SyntaxKind::RECORD_EXPR => self.visit_record_expr(
+                &ast::RecordExpr::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
-            SyntaxKind::RECORD_FIELD => self.visit_record_field(
-                &ast::RecordField::cast(node.clone()).expect(INTERNAL_ERR),
+            SyntaxKind::RECORD_EXPR_FIELD => self.visit_record_expr_field(
+                &ast::RecordExprField::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
-            SyntaxKind::RECORD_FIELD_PAT => self.visit_record_field_pat(
-                &ast::RecordFieldPat::cast(node.clone()).expect(INTERNAL_ERR),
+            SyntaxKind::RECORD_PAT_FIELD => self.visit_record_pat_field(
+                &ast::RecordPatField::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
             _ => {}
@@ -62,7 +62,7 @@ pub trait Visitor {
     visit!(visit_call_expr, CallExpr);
     visit!(visit_path_expr, PathExpr);
     visit!(visit_field_expr, FieldExpr);
-    visit!(visit_record_lit, RecordLit);
-    visit!(visit_record_field, RecordField);
-    visit!(visit_record_field_pat, RecordFieldPat);
+    visit!(visit_record_expr, RecordExpr);
+    visit!(visit_record_expr_field, RecordExprField);
+    visit!(visit_record_pat_field, RecordPatField);
 }
