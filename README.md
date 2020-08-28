@@ -10,34 +10,31 @@ Upgrade your dependencies by automatically fixing your code
 cargo install cargo-up --features cli --no-default-features
 ```
 
-## Workflow
+## Users Workflow
 
-Assuming we have a project with the following `Cargo.toml`
+Assuming that you have a project with the following `Cargo.toml`
 
 ```toml
 [dependencies]
 foo = "0.8.2"
 ```
 
-We can use the upgrade workflow in our project as shown below:
+If `foo` has released `0.9.0` with breaking changes along with a new release of their
+`foo_up` which details the changes, you can simply run the following command in your
+project:
 
+```bash
+cargo up dep foo
 ```
-+----------------------+        +--------------------------------+
-|                      |        |                                |
-|  foo@2.0.0 released  |        | Run all foo_up from old to new |
-|                      |        |                                |
-+----------+-----------+        +----------------+---------------+
-           |                                     ^
-           |                                     |
-           |                                     |
-           |                                     |
-           v                                     |
-  +--------+---------+            +--------------+-------------+
-  |                  |            |                            |
-  |   cargo up foo   +----------->+ Download all foo_up@>0.8.2 |
-  |                  |            |                            |
-  +------------------+            +----------------------------+
-```
+
+Your project code will be automatically upgraded to use the new `foo@0.9.0`.
+
+**NOTE**: The tool upgrades to the latest version of the dependency, which means it can
+do several sequential version upgrades one after the other in a single run.
+
+## Maintainers Workflow
+
+TODO:
 
 ## Contributors
 Here is a list of [Contributors](http://github.com/pksunkara/cargo-up/contributors)
