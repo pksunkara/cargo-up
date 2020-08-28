@@ -5,12 +5,12 @@ use crate::{
     Preloader, Semantics, Upgrader, Version, Visitor,
 };
 use ra_ap_base_db::{FileId, SourceDatabaseExt};
-use ra_ap_hir::{AssocItem, Crate, ModuleDef, PathResolution};
+use ra_ap_hir::{AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_rust_analyzer::cli::load_cargo;
 use ra_ap_text_edit::TextEdit;
 use std::{
-    collections::BTreeMap as Map,
+    collections::HashMap as Map,
     fs::{read_to_string, write},
     io::Result as IoResult,
     path::Path,
@@ -207,6 +207,17 @@ impl Visitor for Runner {
         self.upgrader = upgrader;
     }
 
+    fn visit_ident_pat(&mut self, ident_pat: &ast::IdentPat, semantics: &Semantics) {
+        let mut upgrader = self.upgrader.clone();
+        let version = self.get_version().expect(INTERNAL_ERR);
+
+        for hook in &version.hook_ident_pat {
+            hook(&mut upgrader, ident_pat, semantics);
+        }
+
+        self.upgrader = upgrader;
+    }
+
     fn visit_path_expr(&mut self, path_expr: &ast::PathExpr, semantics: &Semantics) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
@@ -218,24 +229,13 @@ impl Visitor for Runner {
         if let Some(true) = Self::check_path(path_expr.path(), &version.rename_variants) {
             let path = path_expr.path().expect(INTERNAL_ERR);
 
-            if let Some(PathResolution::Def(ModuleDef::EnumVariant(e))) =
-                semantics.resolve_path(&path)
-            {
-                if let Some((_, name)) = self.preloader.variants.iter().find(|x| *x.0 == e) {
-                    if let Some(map) = version.rename_variants.get(name) {
-                        let name_ref = path
-                            .segment()
-                            .expect(INTERNAL_ERR)
-                            .name_ref()
-                            .expect(INTERNAL_ERR);
-                        let variant_name = name_ref.text().to_string();
-
-                        if let Some(to) = map.get(&variant_name) {
-                            upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                        }
-                    }
-                }
-            }
+            rename_variants(
+                &path,
+                &self.preloader.variants,
+                &version.rename_variants,
+                semantics,
+                &mut upgrader,
+            );
         } else if let Some(true) = Self::check_path(path_expr.path(), &version.rename_methods) {
             let path = path_expr.path().expect(INTERNAL_ERR);
 
@@ -257,6 +257,29 @@ impl Visitor for Runner {
                     }
                 }
             }
+        }
+
+        self.upgrader = upgrader;
+    }
+
+    fn visit_path_pat(&mut self, path_pat: &ast::PathPat, semantics: &Semantics) {
+        let mut upgrader = self.upgrader.clone();
+        let version = self.get_version().expect(INTERNAL_ERR);
+
+        for hook in &version.hook_path_pat {
+            hook(&mut upgrader, path_pat, semantics);
+        }
+
+        if let Some(true) = Self::check_path(path_pat.path(), &version.rename_variants) {
+            let path = path_pat.path().expect(INTERNAL_ERR);
+
+            rename_variants(
+                &path,
+                &self.preloader.variants,
+                &version.rename_variants,
+                semantics,
+                &mut upgrader,
+            );
         }
 
         self.upgrader = upgrader;
@@ -296,6 +319,18 @@ impl Visitor for Runner {
             hook(&mut upgrader, record_pat, semantics);
         }
 
+        if let Some(true) = Self::check_path(record_pat.path(), &version.rename_variants) {
+            let path = record_pat.path().expect(INTERNAL_ERR);
+
+            rename_variants(
+                &path,
+                &self.preloader.variants,
+                &version.rename_variants,
+                semantics,
+                &mut upgrader,
+            );
+        }
+
         self.upgrader = upgrader;
     }
 
@@ -305,6 +340,18 @@ impl Visitor for Runner {
 
         for hook in &version.hook_record_expr {
             hook(&mut upgrader, record_expr, semantics);
+        }
+
+        if let Some(true) = Self::check_path(record_expr.path(), &version.rename_variants) {
+            let path = record_expr.path().expect(INTERNAL_ERR);
+
+            rename_variants(
+                &path,
+                &self.preloader.variants,
+                &version.rename_variants,
+                semantics,
+                &mut upgrader,
+            );
         }
 
         self.upgrader = upgrader;
@@ -407,5 +454,57 @@ impl Visitor for Runner {
         }
 
         self.upgrader = upgrader;
+    }
+
+    fn visit_tuple_struct_pat(
+        &mut self,
+        tuple_struct_pat: &ast::TupleStructPat,
+        semantics: &Semantics,
+    ) {
+        let mut upgrader = self.upgrader.clone();
+        let version = self.get_version().expect(INTERNAL_ERR);
+
+        for hook in &version.hook_tuple_struct_pat {
+            hook(&mut upgrader, tuple_struct_pat, semantics);
+        }
+
+        if let Some(true) = Self::check_path(tuple_struct_pat.path(), &version.rename_variants) {
+            let path = tuple_struct_pat.path().expect(INTERNAL_ERR);
+
+            rename_variants(
+                &path,
+                &self.preloader.variants,
+                &version.rename_variants,
+                semantics,
+                &mut upgrader,
+            );
+        }
+
+        self.upgrader = upgrader;
+    }
+}
+
+fn rename_variants(
+    path: &ast::Path,
+    variants: &Map<EnumVariant, String>,
+    map: &Map<String, Map<String, String>>,
+    semantics: &Semantics,
+    upgrader: &mut Upgrader,
+) {
+    if let Some(PathResolution::Def(ModuleDef::EnumVariant(e))) = semantics.resolve_path(&path) {
+        if let Some((_, name)) = variants.iter().find(|x| *x.0 == e) {
+            if let Some(map) = map.get(name) {
+                let name_ref = path
+                    .segment()
+                    .expect(INTERNAL_ERR)
+                    .name_ref()
+                    .expect(INTERNAL_ERR);
+                let variant_name = name_ref.text().to_string();
+
+                if let Some(to) = map.get(&variant_name) {
+                    upgrader.replace(name_ref.syntax().text_range(), to.to_string());
+                }
+            }
+        }
     }
 }

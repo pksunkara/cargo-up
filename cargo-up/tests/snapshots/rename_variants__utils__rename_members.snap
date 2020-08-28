@@ -13,16 +13,16 @@ fn main() {
     let b = E::Pineapple;
     t(&b);
 
-    if let Enum::Orange = b {}
+    if let Enum::Pineapple = b {}
 
     let mut e = Enum::Berry(8);
 
-    if let Enum::Grape(g) = e.clone() {}
-    if let Enum::Grape(ref mut g) = e {}
+    if let Enum::Berry(g) = e.clone() {}
+    if let Enum::Berry(ref mut g) = e {}
 
-    let mut f = Enum::Melon { size: 10 };
+    let mut f = Enum::Papaya { size: 10 };
 
-    if let Enum::Melon { size } = e.clone() {}
+    if let Enum::Papaya { size } = e.clone() {}
 }
 
 fn s(v: &Enum) -> Option<bool> {

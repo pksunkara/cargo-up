@@ -31,8 +31,16 @@ pub trait Visitor {
                 &ast::CallExpr::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
+            SyntaxKind::IDENT_PAT => self.visit_ident_pat(
+                &ast::IdentPat::cast(node.clone()).expect(INTERNAL_ERR),
+                &semantics,
+            ),
             SyntaxKind::PATH_EXPR => self.visit_path_expr(
                 &ast::PathExpr::cast(node.clone()).expect(INTERNAL_ERR),
+                &semantics,
+            ),
+            SyntaxKind::PATH_PAT => self.visit_path_pat(
+                &ast::PathPat::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
             SyntaxKind::FIELD_EXPR => self.visit_field_expr(
@@ -55,6 +63,10 @@ pub trait Visitor {
                 &ast::RecordPatField::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
+            SyntaxKind::TUPLE_STRUCT_PAT => self.visit_tuple_struct_pat(
+                &ast::TupleStructPat::cast(node.clone()).expect(INTERNAL_ERR),
+                &semantics,
+            ),
             _ => {}
         };
 
@@ -66,10 +78,13 @@ pub trait Visitor {
     visit!(visit_source_file, SourceFile);
     visit!(visit_method_call_expr, MethodCallExpr);
     visit!(visit_call_expr, CallExpr);
+    visit!(visit_ident_pat, IdentPat);
     visit!(visit_path_expr, PathExpr);
+    visit!(visit_path_pat, PathPat);
     visit!(visit_field_expr, FieldExpr);
     visit!(visit_record_pat, RecordPat);
     visit!(visit_record_expr, RecordExpr);
     visit!(visit_record_expr_field, RecordExprField);
     visit!(visit_record_pat_field, RecordPatField);
+    visit!(visit_tuple_struct_pat, TupleStructPat);
 }

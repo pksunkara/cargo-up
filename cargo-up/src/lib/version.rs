@@ -4,7 +4,7 @@ use crate::{
     utils::normalize,
     Semantics, Upgrader,
 };
-use std::collections::BTreeMap as Map;
+use std::collections::HashMap as Map;
 
 macro_rules! alias {
     ($node:ident) => {
@@ -26,12 +26,15 @@ macro_rules! hook {
 
 alias!(MethodCallExpr);
 alias!(CallExpr);
+alias!(IdentPat);
 alias!(PathExpr);
+alias!(PathPat);
 alias!(FieldExpr);
 alias!(RecordPat);
 alias!(RecordExpr);
 alias!(RecordExprField);
 alias!(RecordPatField);
+alias!(TupleStructPat);
 
 pub struct Version {
     pub(crate) version: SemverVersion,
@@ -41,12 +44,15 @@ pub struct Version {
     pub(crate) rename_variants: Map<String, Map<String, String>>,
     pub(crate) hook_method_call_expr: Vec<Box<MethodCallExpr>>,
     pub(crate) hook_call_expr: Vec<Box<CallExpr>>,
+    pub(crate) hook_ident_pat: Vec<Box<IdentPat>>,
     pub(crate) hook_path_expr: Vec<Box<PathExpr>>,
+    pub(crate) hook_path_pat: Vec<Box<PathPat>>,
     pub(crate) hook_field_expr: Vec<Box<FieldExpr>>,
     pub(crate) hook_record_pat: Vec<Box<RecordPat>>,
     pub(crate) hook_record_expr: Vec<Box<RecordExpr>>,
     pub(crate) hook_record_expr_field: Vec<Box<RecordExprField>>,
     pub(crate) hook_record_pat_field: Vec<Box<RecordPatField>>,
+    pub(crate) hook_tuple_struct_pat: Vec<Box<TupleStructPat>>,
 }
 
 impl Version {
@@ -59,12 +65,15 @@ impl Version {
             rename_variants: Map::new(),
             hook_method_call_expr: vec![],
             hook_call_expr: vec![],
+            hook_ident_pat: vec![],
             hook_path_expr: vec![],
+            hook_path_pat: vec![],
             hook_field_expr: vec![],
             hook_record_pat: vec![],
             hook_record_expr: vec![],
             hook_record_expr_field: vec![],
             hook_record_pat_field: vec![],
+            hook_tuple_struct_pat: vec![],
         })
     }
 
@@ -105,10 +114,13 @@ impl Version {
 
     hook!(hook_method_call_expr, MethodCallExpr);
     hook!(hook_call_expr, CallExpr);
+    hook!(hook_ident_pat, IdentPat);
     hook!(hook_path_expr, PathExpr);
+    hook!(hook_path_pat, PathPat);
     hook!(hook_field_expr, FieldExpr);
     hook!(hook_record_pat, RecordPat);
     hook!(hook_record_expr, RecordExpr);
     hook!(hook_record_expr_field, RecordExprField);
     hook!(hook_record_pat_field, RecordPatField);
+    hook!(hook_tuple_struct_pat, TupleStructPat);
 }
