@@ -1,4 +1,4 @@
-#[dervie(Clone)]
+#[derive(Clone)]
 pub struct Struct {
     pub struct_member: bool,
 }

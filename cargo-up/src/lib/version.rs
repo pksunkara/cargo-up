@@ -1,16 +1,14 @@
 use crate::{
-    ra_ap_hir::Semantics,
-    ra_ap_ide_db::RootDatabase,
     ra_ap_syntax::ast,
     semver::{SemVerError, Version as SemverVersion},
     utils::normalize,
-    Upgrader,
+    Semantics, Upgrader,
 };
 use std::collections::BTreeMap as Map;
 
 macro_rules! alias {
     ($node:ident) => {
-        type $node = dyn Fn(&mut Upgrader, &ast::$node, &Semantics<RootDatabase>);
+        type $node = dyn Fn(&mut Upgrader, &ast::$node, &Semantics);
     };
 }
 
@@ -18,7 +16,7 @@ macro_rules! hook {
     ($method:ident, $node:ident) => {
         pub fn $method<F>(mut self, f: F) -> Self
         where
-            F: Fn(&mut Upgrader, &ast::$node, &Semantics<RootDatabase>) + 'static,
+            F: Fn(&mut Upgrader, &ast::$node, &Semantics) + 'static,
         {
             self.$method.push(Box::new(f));
             self
@@ -30,6 +28,7 @@ alias!(MethodCallExpr);
 alias!(CallExpr);
 alias!(PathExpr);
 alias!(FieldExpr);
+alias!(RecordPat);
 alias!(RecordExpr);
 alias!(RecordExprField);
 alias!(RecordPatField);
@@ -44,6 +43,7 @@ pub struct Version {
     pub(crate) hook_call_expr: Vec<Box<CallExpr>>,
     pub(crate) hook_path_expr: Vec<Box<PathExpr>>,
     pub(crate) hook_field_expr: Vec<Box<FieldExpr>>,
+    pub(crate) hook_record_pat: Vec<Box<RecordPat>>,
     pub(crate) hook_record_expr: Vec<Box<RecordExpr>>,
     pub(crate) hook_record_expr_field: Vec<Box<RecordExprField>>,
     pub(crate) hook_record_pat_field: Vec<Box<RecordPatField>>,
@@ -61,6 +61,7 @@ impl Version {
             hook_call_expr: vec![],
             hook_path_expr: vec![],
             hook_field_expr: vec![],
+            hook_record_pat: vec![],
             hook_record_expr: vec![],
             hook_record_expr_field: vec![],
             hook_record_pat_field: vec![],
@@ -106,6 +107,7 @@ impl Version {
     hook!(hook_call_expr, CallExpr);
     hook!(hook_path_expr, PathExpr);
     hook!(hook_field_expr, FieldExpr);
+    hook!(hook_record_pat, RecordPat);
     hook!(hook_record_expr, RecordExpr);
     hook!(hook_record_expr_field, RecordExprField);
     hook!(hook_record_pat_field, RecordPatField);

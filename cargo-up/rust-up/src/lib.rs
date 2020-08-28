@@ -1,8 +1,6 @@
 use cargo_up::{
-    ra_ap_hir::Semantics,
-    ra_ap_ide_db::RootDatabase,
     ra_ap_syntax::ast::{self, AstNode},
-    Runner, Upgrader, Version,
+    Runner, Semantics, Upgrader, Version,
 };
 
 pub fn runner() -> Runner {
