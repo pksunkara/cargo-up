@@ -95,7 +95,11 @@ impl Dep {
         let cargo_home = PathBuf::from(var_os("CARGO_HOME").ok_or(Error::NoCargoHome)?);
         let cache_dir = cargo_home.join("cargo-up-cache");
 
-        remove_file(cache_dir.join("Cargo.lock"))?;
+        let lock_file = cache_dir.join("Cargo.lock");
+
+        if lock_file.exists() {
+            remove_file(lock_file)?;
+        }
 
         create_dir_all(cache_dir.join("src"))?;
 

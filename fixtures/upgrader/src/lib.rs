@@ -9,6 +9,7 @@ pub fn runner() -> Runner {
                 .unwrap()
                 .rename_members("upgradee::Struct", &[["struct_member", "new_s_member"]])
                 .rename_members("upgradee::Union", &[["union_member", "new_u_member"]])
+                .rename_variants("upgradee::Enum", &[["Orange", "Pineapple"]])
                 .rename_methods("upgradee::Struct", &[["print", "print_err"]])
                 .rename_methods("upgradee::Enum", &[["talk", "talk_err"]])
                 .rename_methods("upgradee::Union", &[["eat", "eat_err"]]),

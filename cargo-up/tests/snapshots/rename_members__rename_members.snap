@@ -1,0 +1,5 @@
+---
+source: tests/rename_members.rs
+expression: out
+---
+

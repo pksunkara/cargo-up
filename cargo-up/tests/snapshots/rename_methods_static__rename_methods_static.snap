@@ -1,0 +1,5 @@
+---
+source: tests/rename_methods_static.rs
+expression: out
+---
+

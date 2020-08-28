@@ -1,0 +1,5 @@
+---
+source: tests/rename_variants.rs
+expression: out
+---
+

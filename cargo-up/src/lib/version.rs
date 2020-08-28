@@ -39,6 +39,7 @@ pub struct Version {
     pub(crate) peers: Vec<String>,
     pub(crate) rename_methods: Map<String, Map<String, String>>,
     pub(crate) rename_members: Map<String, Map<String, String>>,
+    pub(crate) rename_variants: Map<String, Map<String, String>>,
     pub(crate) hook_method_call_expr: Vec<Box<MethodCallExpr>>,
     pub(crate) hook_call_expr: Vec<Box<CallExpr>>,
     pub(crate) hook_path_expr: Vec<Box<PathExpr>>,
@@ -55,6 +56,7 @@ impl Version {
             peers: vec![],
             rename_methods: Map::new(),
             rename_members: Map::new(),
+            rename_variants: Map::new(),
             hook_method_call_expr: vec![],
             hook_call_expr: vec![],
             hook_path_expr: vec![],
@@ -82,6 +84,16 @@ impl Version {
 
     pub fn rename_members(mut self, name: &str, map: &[[&str; 2]]) -> Self {
         self.rename_members.insert(
+            name.to_string(),
+            map.iter()
+                .map(|x| (x[0].to_string(), x[1].to_string()))
+                .collect(),
+        );
+        self
+    }
+
+    pub fn rename_variants(mut self, name: &str, map: &[[&str; 2]]) -> Self {
+        self.rename_variants.insert(
             name.to_string(),
             map.iter()
                 .map(|x| (x[0].to_string(), x[1].to_string()))

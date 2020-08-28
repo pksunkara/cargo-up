@@ -1,0 +1,6 @@
+---
+source: tests/rename_methods_static.rs
+expression: err
+---
+Pre loading upgradee ... done
+

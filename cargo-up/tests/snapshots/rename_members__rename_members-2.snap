@@ -1,5 +1,5 @@
 ---
-source: tests/rename_method_static.rs
+source: tests/rename_members.rs
 expression: err
 ---
 Pre loading upgradee ... done
