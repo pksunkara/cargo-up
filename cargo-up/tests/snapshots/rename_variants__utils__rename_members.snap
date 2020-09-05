@@ -3,6 +3,7 @@ source: tests/utils.rs
 expression: file_content
 ---
 use upgradee::Enum;
+use Enum::*;
 
 type E = Enum;
 
@@ -26,24 +27,20 @@ fn main() {
 }
 
 fn s(v: &Enum) -> Option<bool> {
-    use Enum::*;
-
     match v {
-        Orange => Some(true),
-        Grape(_) => Some(false),
-        Melon { .. } => Some(false),
+        Pineapple => Some(true),
+        Berry(_) => Some(false),
+        Papaya { .. } => Some(false),
         _ => None,
     }
 }
 
 fn t(v: &Enum) -> Option<bool> {
-    use Enum::*;
-
-    if let Orange = v {
+    if let Pineapple = v {
         Some(true)
-    } else if let Grape(g) = v {
+    } else if let Berry(g) = v {
         Some(false)
-    } else if let Melon { size } = v {
+    } else if let Papaya { size } = v {
         Some(false)
     } else {
         None

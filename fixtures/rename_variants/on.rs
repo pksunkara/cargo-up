@@ -1,4 +1,5 @@
 use upgradee::Enum;
+use Enum::*;
 
 type E = Enum;
 
@@ -22,8 +23,6 @@ fn main() {
 }
 
 fn s(v: &Enum) -> Option<bool> {
-    use Enum::*;
-
     match v {
         Orange => Some(true),
         Grape(_) => Some(false),
@@ -33,8 +32,6 @@ fn s(v: &Enum) -> Option<bool> {
 }
 
 fn t(v: &Enum) -> Option<bool> {
-    use Enum::*;
-
     if let Orange = v {
         Some(true)
     } else if let Grape(g) = v {
