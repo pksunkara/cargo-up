@@ -86,7 +86,7 @@ impl Dep {
                     .as_ref()
                     .map_or_else(|| krate.crate_data.max_version.clone(), |x| x.to_string()),
                 // TODO: Get the next version from crates.io
-                String::from("3.0.0-beta.1"),
+                String::from("3.0.0-rc.0"),
                 format!(r#""={}""#, crate_version!()),
             )
         };

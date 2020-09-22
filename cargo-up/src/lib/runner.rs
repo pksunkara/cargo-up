@@ -426,7 +426,7 @@ impl Visitor for Runner {
         if let Some(true) =
             Self::check_name_or_name_ref(record_pat_field.field_name(), &version.rename_members)
         {
-            if let Some(f) = semantics.resolve_record_field_pat(record_pat_field) {
+            if let Some(f) = semantics.resolve_record_pat_field(record_pat_field) {
                 if let Some((_, name)) = self.preloader.members.iter().find(|x| *x.0 == f) {
                     if let Some(map) = version.rename_members.get(name) {
                         match record_pat_field.field_name() {
