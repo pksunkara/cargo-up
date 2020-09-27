@@ -1,11 +1,14 @@
 use crate::utils::TERM_ERR;
-use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, Field, Function, Module, ModuleDef, ScopeDef};
+use ra_ap_hir::{
+    Adt, AssocItem, Crate, EnumVariant, Field, Function, Module, ModuleDef, ScopeDef, Struct,
+};
 use ra_ap_ide_db::RootDatabase;
 use std::collections::HashMap as Map;
 
 #[derive(Debug, Default)]
 pub(crate) struct Preloader {
     pub(crate) methods: Map<Function, String>,
+    pub(crate) structs: Map<Struct, String>,
     pub(crate) members: Map<Field, String>,
     pub(crate) variants: Map<EnumVariant, String>,
     pub(crate) visited: Vec<String>,
@@ -30,8 +33,10 @@ impl Preloader {
     fn load_module(&mut self, db: &RootDatabase, module: &Module, path: Vec<String>) {
         for (_, scope) in module.scope(db, None) {
             match scope {
-                // Load struct members
+                // Load struct && members
                 ScopeDef::ModuleDef(ModuleDef::Adt(Adt::Struct(s))) => {
+                    self.structs.insert(s.clone(), path.join("::"));
+
                     let name = format!("{}::{}", path.join("::"), s.name(db));
 
                     for field in s.fields(db) {

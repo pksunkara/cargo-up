@@ -8,7 +8,7 @@ use crate::{
     Preloader, Semantics, Upgrader, Version, Visitor,
 };
 use ra_ap_base_db::{FileId, SourceDatabaseExt};
-use ra_ap_hir::{AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
+use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_rust_analyzer::cli::load_cargo;
 use ra_ap_text_edit::TextEdit;
@@ -128,6 +128,8 @@ impl Runner {
             write(&full_path, file_text)?;
         }
 
+        // TODO: Modify Cargo.toml
+
         TERM_ERR.flush()?;
         TERM_OUT.flush()?;
 
@@ -226,6 +228,38 @@ impl Visitor for Runner {
 
                     if let Some(to) = map.get(&variant_name) {
                         upgrader.replace(name_ref.syntax().text_range(), to.to_string());
+                    }
+                }
+            }
+        }
+
+        self.upgrader = upgrader;
+    }
+
+    fn visit_path(&mut self, path: &ast::Path, semantics: &Semantics) {
+        let mut upgrader = self.upgrader.clone();
+        let version = self.get_version().expect(INTERNAL_ERR);
+
+        for hook in &version.hook_path {
+            hook(&mut upgrader, path, semantics);
+        }
+
+        if let Some(true) = Self::check_path(Some(path.clone()), &version.rename_structs) {
+            if let Some(PathResolution::Def(ModuleDef::Adt(Adt::Struct(s)))) =
+                semantics.resolve_path(path)
+            {
+                if let Some((_, name)) = self.preloader.structs.iter().find(|x| *x.0 == s) {
+                    if let Some(map) = version.rename_structs.get(name) {
+                        let name_ref = path
+                            .segment()
+                            .expect(INTERNAL_ERR)
+                            .name_ref()
+                            .expect(INTERNAL_ERR);
+                        let struct_name = name_ref.text().to_string();
+
+                        if let Some(to) = map.get(&struct_name) {
+                            upgrader.replace(name_ref.syntax().text_range(), to.to_string());
+                        }
                     }
                 }
             }

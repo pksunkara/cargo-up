@@ -35,6 +35,10 @@ pub trait Visitor {
                 &ast::IdentPat::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
             ),
+            SyntaxKind::PATH => self.visit_path(
+                &ast::Path::cast(node.clone()).expect(INTERNAL_ERR),
+                &semantics,
+            ),
             SyntaxKind::PATH_EXPR => self.visit_path_expr(
                 &ast::PathExpr::cast(node.clone()).expect(INTERNAL_ERR),
                 &semantics,
@@ -79,6 +83,7 @@ pub trait Visitor {
     visit!(visit_method_call_expr, MethodCallExpr);
     visit!(visit_call_expr, CallExpr);
     visit!(visit_ident_pat, IdentPat);
+    visit!(visit_path, Path);
     visit!(visit_path_expr, PathExpr);
     visit!(visit_path_pat, PathPat);
     visit!(visit_field_expr, FieldExpr);

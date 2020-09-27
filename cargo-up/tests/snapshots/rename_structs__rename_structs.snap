@@ -1,0 +1,5 @@
+---
+source: tests/rename_structs.rs
+expression: out
+---
+

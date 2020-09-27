@@ -85,7 +85,8 @@ impl Dep {
                 self.version
                     .as_ref()
                     .map_or_else(|| krate.crate_data.max_version.clone(), |x| x.to_string()),
-                // TODO: Get the next version from crates.io
+                // TODO: Get all the next versions from crates.io and build up slowly
+                // assuming unavailable versions to be skipped
                 String::from("3.0.0-rc.0"),
                 format!(r#""={}""#, crate_version!()),
             )

@@ -1,0 +1,32 @@
+---
+source: tests/utils.rs
+expression: file_content
+---
+use upgradee::NewStruct;
+
+type S = NewStruct;
+
+struct I {
+    inner: NewStruct,
+}
+
+fn main() {
+    let mut a = NewStruct {
+        struct_member: true,
+    };
+
+    a.struct_member = false;
+    s(&a);
+
+    let mut e = NewStruct {
+        struct_member: false,
+    };
+
+    let NewStruct { struct_member } = e.clone();
+}
+
+fn s(v: &NewStruct) {
+    match v {
+        NewStruct { struct_member } => println!("{}", struct_member),
+    };
+}

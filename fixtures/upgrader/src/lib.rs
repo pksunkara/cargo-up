@@ -7,6 +7,7 @@ pub fn runner() -> Runner {
         .version(
             Version::new("0.3.0")
                 .unwrap()
+                .rename_structs("upgradee", &[["OldStruct", "NewStruct"]])
                 .rename_members("upgradee::Struct", &[["struct_member", "new_s_member"]])
                 .rename_members("upgradee::Union", &[["union_member", "new_u_member"]])
                 .rename_variants(

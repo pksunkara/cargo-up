@@ -8,4 +8,4 @@ fn test_rename_members() {
     assert_snapshot!(err);
 }
 
-// TODO: Member of member in Struct or Mmeber of variant in Enum
+// TODO: Member of member in Struct or Member of variant in Enum

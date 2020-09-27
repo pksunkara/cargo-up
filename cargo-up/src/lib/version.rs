@@ -27,6 +27,7 @@ macro_rules! hook {
 alias!(MethodCallExpr);
 alias!(CallExpr);
 alias!(IdentPat);
+alias!(Path);
 alias!(PathExpr);
 alias!(PathPat);
 alias!(FieldExpr);
@@ -39,12 +40,14 @@ alias!(TupleStructPat);
 pub struct Version {
     pub(crate) version: SemverVersion,
     pub(crate) peers: Vec<String>,
+    pub(crate) rename_structs: Map<String, Map<String, String>>,
     pub(crate) rename_methods: Map<String, Map<String, String>>,
     pub(crate) rename_members: Map<String, Map<String, String>>,
     pub(crate) rename_variants: Map<String, Map<String, String>>,
     pub(crate) hook_method_call_expr: Vec<Box<MethodCallExpr>>,
     pub(crate) hook_call_expr: Vec<Box<CallExpr>>,
     pub(crate) hook_ident_pat: Vec<Box<IdentPat>>,
+    pub(crate) hook_path: Vec<Box<Path>>,
     pub(crate) hook_path_expr: Vec<Box<PathExpr>>,
     pub(crate) hook_path_pat: Vec<Box<PathPat>>,
     pub(crate) hook_field_expr: Vec<Box<FieldExpr>>,
@@ -60,12 +63,14 @@ impl Version {
         Ok(Self {
             version: SemverVersion::parse(version)?,
             peers: vec![],
+            rename_structs: Map::new(),
             rename_methods: Map::new(),
             rename_members: Map::new(),
             rename_variants: Map::new(),
             hook_method_call_expr: vec![],
             hook_call_expr: vec![],
             hook_ident_pat: vec![],
+            hook_path: vec![],
             hook_path_expr: vec![],
             hook_path_pat: vec![],
             hook_field_expr: vec![],
@@ -79,6 +84,16 @@ impl Version {
 
     pub fn peers(mut self, peers: &[&str]) -> Self {
         self.peers = peers.to_vec().iter().map(|x| normalize(*x)).collect();
+        self
+    }
+
+    pub fn rename_structs(mut self, name: &str, map: &[[&str; 2]]) -> Self {
+        self.rename_structs.insert(
+            name.to_string(),
+            map.iter()
+                .map(|x| (x[0].to_string(), x[1].to_string()))
+                .collect(),
+        );
         self
     }
 
@@ -115,6 +130,7 @@ impl Version {
     hook!(hook_method_call_expr, MethodCallExpr);
     hook!(hook_call_expr, CallExpr);
     hook!(hook_ident_pat, IdentPat);
+    hook!(hook_path, Path);
     hook!(hook_path_expr, PathExpr);
     hook!(hook_path_pat, PathPat);
     hook!(hook_field_expr, FieldExpr);
