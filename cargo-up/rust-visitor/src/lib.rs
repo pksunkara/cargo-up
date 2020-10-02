@@ -12,34 +12,52 @@ pub use ra_ap_syntax;
 
 pub type Semantics<'db> = ra_ap_hir::Semantics<'db, RootDatabase>;
 
-macro_rules! visitor {
+macro_rules! visiting {
     () => {};
     ($($kind:ident => $method:ident as $node:ident,)*) => {
-        pub trait Visitor {
-            fn visit(&mut self, node: &SyntaxNode, semantics: &Semantics) {
-                match node.kind() {
-                    $(SyntaxKind::$kind => self.$method(
-                        &ast::$node::cast(node.clone()).expect(INTERNAL_ERR),
-                        &semantics,
+        trait Visitable: Sized {
+            fn accept<T: Visitor>(&self, visitor: &mut T, semantics: &Semantics);
+        }
+
+        impl Visitable for SyntaxNode {
+            fn accept<T: Visitor>(&self, visitor: &mut T, semantics: &Semantics) {
+                visitor.pre_visit(self, semantics);
+
+                match self.kind() {
+                    $(SyntaxKind::$kind => visitor.$method(
+                        &ast::$node::cast((*self).clone()).expect(INTERNAL_ERR),
+                        semantics,
                     ),)*
                     _ => {},
+                };
+
+                for child in self.children() {
+                    child.accept(visitor, semantics);
                 }
 
-                for child in node.children() {
-                    self.visit(&child, semantics);
-                }
+                visitor.post_visit(self, semantics);
+            }
+        }
 
-                self.post_visit(node, semantics);
+        pub trait Visitor: Sized {
+            /// Call this method to perform a in-order traversal on `node` and its children.
+            fn walk(&mut self, node: &SyntaxNode, semantics: &Semantics) {
+                node.accept(self, semantics);
             }
 
+            /// This method is called before visiting a node.
+            fn pre_visit(&mut self, _node: &SyntaxNode, _semantics: &Semantics) {}
+
+            /// This method is called after visiting a node.
             fn post_visit(&mut self, _node: &SyntaxNode, _semantics: &Semantics) {}
 
-            $(fn $method(&mut self, _ast: &ast::$node, _semantics: &Semantics) {})*
+            /// This method is called when visiting a node of the given type.
+            $(fn $method(&mut self, _node: &ast::$node, _semantics: &Semantics) {})*
         }
     };
 }
 
-visitor!(
+visiting!(
     SOURCE_FILE => visit_source_file as SourceFile,
     STRUCT => visit_struct as Struct,
     UNION => visit_union as Union,
