@@ -17,16 +17,21 @@ macro_rules! visitor {
     ($($kind:ident => $method:ident as $node:ident,)*) => {
         pub trait Visitor {
             fn visit(&mut self, node: &SyntaxNode, semantics: &Semantics) {
+                let mut skip_children: bool = false;
+
                 match node.kind() {
                     $(SyntaxKind::$kind => self.$method(
                         &ast::$node::cast(node.clone()).expect(INTERNAL_ERR),
                         &semantics,
+                        &mut skip_children,
                     ),)*
                     _ => {},
                 }
 
-                for child in node.children() {
-                    self.visit(&child, semantics);
+                if !skip_children {
+                    for child in node.children() {
+                        self.visit(&child, semantics);
+                    }
                 }
 
                 self.post_visit(node, semantics);
@@ -34,7 +39,7 @@ macro_rules! visitor {
 
             fn post_visit(&mut self, _node: &SyntaxNode, _semantics: &Semantics) {}
 
-            $(fn $method(&mut self, _ast: &ast::$node, _semantics: &Semantics) {})*
+            $(fn $method(&mut self, _ast: &ast::$node, _semantics: &Semantics, _skip_children: &mut bool) {})*
         }
     };
 }
