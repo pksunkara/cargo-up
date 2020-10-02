@@ -26,10 +26,15 @@ macro_rules! visitor {
                 }
 
                 for child in node.children() {
-                    self.visit(&child, &semantics);
+                    self.visit(&child, semantics);
                 }
+
+                self.post_visit(node, semantics);
             }
-            $(fn $method(&mut self, _: &ast::$node, _semantics: &Semantics) {})*
+
+            fn post_visit(&mut self, _node: &SyntaxNode, _semantics: &Semantics) {}
+
+            $(fn $method(&mut self, _ast: &ast::$node, _semantics: &Semantics) {})*
         }
     };
 }
