@@ -5,13 +5,14 @@ use crate::{
     },
     semver::{SemVerError, Version as SemverVersion},
     utils::{normalize, Error, INTERNAL_ERR, TERM_ERR, TERM_OUT},
-    Preloader, Semantics, Upgrader, Version, Visitor,
+    Preloader, Semantics, Upgrader, Version,
 };
 use ra_ap_base_db::{FileId, SourceDatabaseExt};
 use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_rust_analyzer::cli::load_cargo;
 use ra_ap_text_edit::TextEdit;
+use rust_visitor::Visitor;
 use std::{
     collections::HashMap as Map,
     fs::{read_to_string, write},

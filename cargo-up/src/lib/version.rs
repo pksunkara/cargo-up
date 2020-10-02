@@ -1,9 +1,9 @@
 use crate::{
-    ra_ap_syntax::ast,
     semver::{SemVerError, Version as SemverVersion},
     utils::normalize,
-    Semantics, Upgrader,
+    Upgrader,
 };
+use rust_visitor::{ra_ap_syntax::ast, Semantics};
 use std::collections::HashMap as Map;
 
 macro_rules! alias {

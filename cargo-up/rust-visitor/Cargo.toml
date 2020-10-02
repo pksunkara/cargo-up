@@ -1,0 +1,16 @@
+[package]
+name = "rust-visitor"
+version = "0.1.0"
+authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
+edition = "2018"
+description = "Visitor trait for Rust AST based on rust-analyzer"
+repository = "https://github.com/pksunkara/cargo-up"
+license = "MIT"
+
+[dependencies]
+ra_ap_syntax = "=0.0.16"
+ra_ap_ide_db = "=0.0.16"
+ra_ap_hir = "=0.0.16"
+
+[package.metadata.workspaces]
+independent = true

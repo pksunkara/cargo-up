@@ -1,12 +1,14 @@
-use crate::{
-    ra_ap_syntax::{
-        ast::{self, AstNode},
-        SyntaxKind, SyntaxNode,
-    },
-    utils::INTERNAL_ERR,
-};
 use ra_ap_hir;
 use ra_ap_ide_db::RootDatabase;
+use ra_ap_syntax::{
+    ast::{self, AstNode},
+    SyntaxKind, SyntaxNode,
+};
+
+pub(crate) const INTERNAL_ERR: &'static str =
+    "Internal error message. Please create an issue on https://github.com/pksunkara/cargo-up";
+
+pub use ra_ap_syntax;
 
 pub type Semantics<'db> = ra_ap_hir::Semantics<'db, RootDatabase>;
 
