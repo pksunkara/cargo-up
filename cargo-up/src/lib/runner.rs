@@ -112,7 +112,7 @@ impl Runner {
                 let source_file = semantics.parse(file_id);
                 // println!("{:#?}", source_file.syntax());
 
-                self.visit(source_file.syntax(), &semantics);
+                self.walk(source_file.syntax(), &semantics);
 
                 changes.insert(file_id, self.upgrader.finish());
             }
