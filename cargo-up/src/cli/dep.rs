@@ -128,7 +128,7 @@ impl Dep {
             cache_dir.join("src").join("main.rs"),
             format!(
                 r#"
-                use cargo_up::{{semver::Version, Runner}};
+                use cargo_up::{{semver::Version, run, Runner}};
                 use std::path::Path;
 
                 // To type check the returned runner
@@ -141,9 +141,10 @@ impl Dep {
                         .format_timestamp(None)
                         .init();
 
-                    runner().run(
+                    run(
                         Path::new("{}"),
                         "{}",
+                        runner(),
                         Version::parse("{}").unwrap(),
                         Version::parse("{}").unwrap(),
                     ).unwrap();

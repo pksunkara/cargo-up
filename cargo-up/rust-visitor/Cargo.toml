@@ -9,8 +9,6 @@ license = "MIT"
 
 [dependencies]
 ra_ap_syntax = "=0.0.16"
-ra_ap_ide_db = "=0.0.16"
-ra_ap_hir = "=0.0.16"
 
 [package.metadata.workspaces]
 independent = true
