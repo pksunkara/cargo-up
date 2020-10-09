@@ -12,7 +12,7 @@ use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_rust_analyzer::cli::load_cargo;
 use ra_ap_text_edit::TextEdit;
-use rust_visitor::Visitor;
+use rust_visitor::{Visitor, Options};
 use std::{
     collections::HashMap as Map,
     fs::{read_to_string, write},
@@ -187,9 +187,9 @@ impl<'a> RunnerWrapper<'a> {
 }
 
 impl<'a> Visitor for RunnerWrapper<'a> {
-    fn visit_source_file(&mut self, _: &ast::SourceFile) {}
+    fn visit_source_file(&mut self, _: &ast::SourceFile, _: &mut Options) {}
 
-    fn visit_method_call_expr(&mut self, method_call_expr: &ast::MethodCallExpr) {
+    fn visit_method_call_expr(&mut self, method_call_expr: &ast::MethodCallExpr, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -217,7 +217,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_call_expr(&mut self, call_expr: &ast::CallExpr) {
+    fn visit_call_expr(&mut self, call_expr: &ast::CallExpr, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -228,7 +228,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_ident_pat(&mut self, ident_pat: &ast::IdentPat) {
+    fn visit_ident_pat(&mut self, ident_pat: &ast::IdentPat, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -254,7 +254,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_path(&mut self, path: &ast::Path) {
+    fn visit_path(&mut self, path: &ast::Path, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -286,7 +286,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_path_expr(&mut self, path_expr: &ast::PathExpr) {
+    fn visit_path_expr(&mut self, path_expr: &ast::PathExpr, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -328,7 +328,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_path_pat(&mut self, path_pat: &ast::PathPat) {
+    fn visit_path_pat(&mut self, path_pat: &ast::PathPat, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -347,7 +347,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_field_expr(&mut self, field_expr: &ast::FieldExpr) {
+    fn visit_field_expr(&mut self, field_expr: &ast::FieldExpr, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -373,7 +373,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_record_pat(&mut self, record_pat: &ast::RecordPat) {
+    fn visit_record_pat(&mut self, record_pat: &ast::RecordPat, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -392,7 +392,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_record_expr(&mut self, record_expr: &ast::RecordExpr) {
+    fn visit_record_expr(&mut self, record_expr: &ast::RecordExpr, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -411,7 +411,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_record_expr_field(&mut self, record_expr_field: &ast::RecordExprField) {
+    fn visit_record_expr_field(&mut self, record_expr_field: &ast::RecordExprField, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -459,7 +459,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_record_pat_field(&mut self, record_pat_field: &ast::RecordPatField) {
+    fn visit_record_pat_field(&mut self, record_pat_field: &ast::RecordPatField, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 
@@ -502,7 +502,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_tuple_struct_pat(&mut self, tuple_struct_pat: &ast::TupleStructPat) {
+    fn visit_tuple_struct_pat(&mut self, tuple_struct_pat: &ast::TupleStructPat, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 

@@ -8,6 +8,11 @@ pub(crate) const INTERNAL_ERR: &'static str =
 
 pub use ra_ap_syntax;
 
+#[derive(Default, Debug)]
+pub struct Options {
+    skip_children: bool,
+}
+
 macro_rules! visiting {
     () => {};
     ($($kind:ident => $method:ident as $node:ident,)*) => {
@@ -17,17 +22,22 @@ macro_rules! visiting {
 
         impl Visitable for SyntaxNode {
             fn accept<T: Visitor>(&self, visitor: &mut T) {
+                let mut options = Options::default();
+
                 visitor.pre_visit(self);
 
                 match self.kind() {
                     $(SyntaxKind::$kind => visitor.$method(
                         &ast::$node::cast((*self).clone()).expect(INTERNAL_ERR),
+                        &mut options,
                     ),)*
                     _ => {},
                 };
 
-                for child in self.children() {
-                    child.accept(visitor);
+                if !options.skip_children {
+                    for child in self.children() {
+                        child.accept(visitor);
+                    }
                 }
 
                 visitor.post_visit(self);
@@ -46,8 +56,8 @@ macro_rules! visiting {
             /// This method is called after visiting a node.
             fn post_visit(&mut self, _node: &SyntaxNode) {}
 
-            /// This method is called when visiting a node of the given type.
-            $(fn $method(&mut self, _node: &ast::$node) {})*
+            // This method is called when visiting a node of the given type.
+            $(fn $method(&mut self, _node: &ast::$node, _options: &mut Options) {})*
         }
     };
 }
