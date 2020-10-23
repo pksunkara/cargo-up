@@ -9,6 +9,7 @@ license = "MIT"
 
 [dependencies]
 ra_ap_syntax = "=0.0.16"
+paste = "1.0.2"
 
 [package.metadata.workspaces]
 independent = true
