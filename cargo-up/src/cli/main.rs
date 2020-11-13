@@ -1,5 +1,6 @@
 use cargo_metadata::{CargoOpt, MetadataCommand};
 use clap::{AppSettings, Clap};
+
 use std::process::exit;
 
 mod dep;

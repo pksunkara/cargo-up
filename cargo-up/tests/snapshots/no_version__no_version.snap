@@ -2,5 +2,4 @@
 source: tests/no_version.rs
 expression: out
 ---
-There are no changes in the upgrader for target 0.2.1
-
+Upgrader for crate upgradee has not described any changes for 0.2.1 version

@@ -1,8 +1,15 @@
-use crate::utils::{cargo, normalize, Error, Result, INTERNAL_ERR};
-use cargo_metadata::Metadata;
+use crate::utils::{
+    cargo,
+    crates::{Upgrader, Versions},
+    normalize,
+    term::{TERM_OUT, YELLOW},
+    Error, Result, INTERNAL_ERR,
+};
+
+use cargo_metadata::{Metadata, Package};
 use clap::{crate_version, Clap};
-use crates_io_api::SyncClient;
 use semver::Version;
+
 use std::{
     env::{current_dir, var_os},
     fs::{create_dir_all, remove_file, write},
@@ -25,11 +32,11 @@ pub struct Dep {
     to_version: Option<Version>,
 
     /// Specify path for upgrader
-    #[clap(long, hidden = true, requires_all = &["name", "to-version", "lib-path"], conflicts_with_all = &["version"])]
+    #[clap(long, hidden = true, requires_all = &["name", "to-version", "lib-path"])]
     path: Option<String>,
 
     /// Specify name for upgrader if upgrader path is given
-    #[clap(long, hidden = true, requires_all = &["path", "to-version", "lib-path"])]
+    #[clap(long, hidden = true, requires_all = &["path", "to-version", "lib-path"], conflicts_with_all = &["version"])]
     name: Option<String>,
 
     /// Specify path for cargo-up library
@@ -58,40 +65,94 @@ impl Dep {
         let pkg = metadata
             .packages
             .iter()
-            .find(|x| normalize(&x.name) == dep)
+            .find(|x| normalize(&x.name) == *dep)
             .ok_or(Error::PackageNotFound {
                 id: self.dep.clone(),
             })?;
 
-        let (upgrader, upgrader_version, to_version, lib_version) = if let Some(name) = &self.name {
-            (
-                name.to_string(),
-                get_path(&self.path)?,
-                self.to_version.as_ref().expect(INTERNAL_ERR).to_string(),
-                get_path(&self.lib_path)?,
+        if let Some(name) = &self.name {
+            // Use the given options on CLI for local testing
+            let to_version = self.to_version.as_ref().expect(INTERNAL_ERR).to_string();
+
+            self.upgrade(
+                &metadata,
+                &dep,
+                pkg,
+                name,
+                &get_path(&self.path)?,
+                &to_version,
+                &get_path(&self.lib_path)?,
             )
         } else {
             // Find the upgrader in crates.io
             let upgrader = format!("{}_up", &dep);
-            let client = SyncClient::new();
 
-            let krate = client.get_crate(&upgrader).map_err(|_| Error::NoUpgrader {
-                id: dep.clone(),
-                upgrader,
-            })?;
+            let upgrader_krate =
+                ureq::get(&format!("https://crates.io/api/v1/crates/{}", upgrader))
+                    .call()
+                    .into_json_deserialize::<Upgrader>()
+                    .map_err(|_| Error::NoUpgrader {
+                        id: dep.clone(),
+                        upgrader,
+                    })?;
 
-            (
-                krate.crate_data.name.clone(),
-                self.version
-                    .as_ref()
-                    .map_or_else(|| krate.crate_data.max_version.clone(), |x| x.to_string()),
-                // TODO: Get all the next versions from crates.io and build up slowly
-                // assuming unavailable versions to be skipped
-                String::from("3.0.0-rc.0"),
-                format!(r#""={}""#, crate_version!()),
-            )
-        };
+            let lib_version = format!(r#""={}""#, crate_version!());
+            let upgrader_version = format!(
+                r#""={}""#,
+                self.version.as_ref().map_or_else(
+                    || upgrader_krate.krate.max_version.clone(),
+                    |x| x.to_string(),
+                )
+            );
 
+            // We get the versions sorted already by semver in descending order
+            // https://github.com/rust-lang/crates.io/blob/c128a6765648d46a0e2246a669c994bfd494fef4/src/krate.rs#L281
+            let versions = ureq::get(&format!("https://crates.io/api/v1/crates/{}/versions", dep))
+                .call()
+                .into_json_deserialize::<Versions>()
+                .map_err(|_| Error::NoDependency { dep: dep.clone() })?
+                .versions
+                .into_iter()
+                .map(|x| Version::parse(&x.num).map_err(|_| Error::BadRegistry))
+                .rev()
+                .collect::<Result<Vec<Version>>>()?
+                .into_iter()
+                .filter(|x| *x > pkg.version)
+                .collect::<Vec<_>>();
+
+            for to_version in versions {
+                TERM_OUT.write_line(&format!(
+                    "Upgrading {} dependency to {} version ...",
+                    YELLOW.apply_to(&self.dep),
+                    YELLOW.apply_to(&to_version),
+                ))?;
+                TERM_OUT.flush()?;
+
+                self.upgrade(
+                    &metadata,
+                    &dep,
+                    pkg,
+                    &upgrader_krate.krate.name,
+                    &upgrader_version,
+                    &to_version.to_string(),
+                    &lib_version,
+                )?;
+            }
+
+            Ok(())
+        }
+    }
+
+    fn upgrade(
+        &self,
+        metadata: &Metadata,
+        dep: &String,
+        pkg: &Package,
+        upgrader: &str,
+        upgrader_version: &str,
+        to_version: &str,
+        lib_version: &str,
+    ) -> Result {
         // Write the upgrade runner
         let cargo_home = PathBuf::from(var_os("CARGO_HOME").ok_or(Error::NoCargoHome)?);
         let cache_dir = cargo_home.join("cargo-up-cache");
@@ -150,22 +211,24 @@ impl Dep {
                     ).unwrap();
                 }}
                 "#,
-                &upgrader,
-                &metadata.workspace_root.to_string_lossy(),
-                &dep,
-                pkg.version.to_string(),
-                &to_version,
+                upgrader,
+                metadata.workspace_root.to_string_lossy(),
+                dep,
+                pkg.version,
+                to_version,
             ),
         )?;
 
-        // Execute the upgrader
+        // Compile the upgrader
         let (_, err) = cargo(&cache_dir, &["build"], !self.suppress_cargo_output)?;
 
         if !err.contains("Finished") {
-            panic!("unable to build");
-            // TODO: Error
+            return Err(Error::Building {
+                upgrader: upgrader.into(),
+            });
         }
 
+        // Execute the upgrader
         let status = Command::new(cache_dir.join("target").join("debug").join("runner"))
             .current_dir(&cache_dir)
             .spawn()
@@ -173,8 +236,9 @@ impl Dep {
             .wait()?;
 
         if !status.success() {
-            panic!("exit status bad");
-            // TODO: Error
+            return Err(Error::Upgrading {
+                upgrader: upgrader.into(),
+            });
         }
 
         Ok(())

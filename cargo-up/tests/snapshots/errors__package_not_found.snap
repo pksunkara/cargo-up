@@ -2,5 +2,5 @@
 source: tests/errors.rs
 expression: err
 ---
-error: unable to find package notfound
+error: unable to find package notfound in your dependencies
 

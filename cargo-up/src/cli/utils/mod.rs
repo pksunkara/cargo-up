@@ -1,4 +1,5 @@
 mod cargo;
+pub mod crates;
 mod error;
 pub mod term;
 

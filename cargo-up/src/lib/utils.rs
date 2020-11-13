@@ -14,9 +14,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub(crate) enum Error {
-    #[error("There are no changes in the upgrader for target {0}")]
-    NoChanges(String),
-    #[error("minimum version of {0} that should be upgraded from is {1}")]
+    #[error("Upgrader for crate {0} has not described any changes for {1} version")]
+    NoChanges(String, String),
+    #[error("minimum version of `{0}` that should be upgraded from is {1}")]
     NotMinimum(String, String),
 }
 
@@ -32,7 +32,10 @@ impl Error {
 
     fn color(self) -> Self {
         match self {
-            Self::NoChanges(version) => Self::NoChanges(YELLOW_OUT.apply_to(version).to_string()),
+            Self::NoChanges(dep, version) => Self::NoChanges(
+                YELLOW_OUT.apply_to(dep).to_string(),
+                YELLOW_OUT.apply_to(version).to_string(),
+            ),
             Self::NotMinimum(dep, min) => Self::NotMinimum(
                 YELLOW.apply_to(dep).to_string(),
                 YELLOW.apply_to(min).to_string(),

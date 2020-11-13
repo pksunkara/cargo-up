@@ -1,4 +1,5 @@
 use crate::utils::{term::TERM_ERR, Error, Result, INTERNAL_ERR};
+
 use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
@@ -12,6 +13,8 @@ pub fn cargo<'a>(root: &PathBuf, args: &[&'a str], out: bool) -> Result<(String,
         args.push("--color");
         args.push("always");
     }
+
+    eprintln!();
 
     let mut output_stderr = vec![];
     let mut child = Command::new("cargo")
@@ -42,6 +45,8 @@ pub fn cargo<'a>(root: &PathBuf, args: &[&'a str], out: bool) -> Result<(String,
         err,
         args: args.iter().map(|x| x.to_string()).collect(),
     })?;
+
+    eprintln!();
 
     Ok((
         String::from_utf8(output.stdout)?.trim().to_owned(),

@@ -12,7 +12,7 @@ use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_rust_analyzer::cli::load_cargo;
 use ra_ap_text_edit::TextEdit;
-use rust_visitor::{Visitor, Options};
+use rust_visitor::{Options, Visitor};
 use std::{
     collections::HashMap as Map,
     fs::{read_to_string, write},
@@ -60,14 +60,8 @@ pub fn run(
     from: SemverVersion,
     to: SemverVersion,
 ) -> IoResult<()> {
-    let (host, vfs) = load_cargo(root, true, false).unwrap();
-    let db = host.raw_database();
-
-    let mut changes = Map::<FileId, TextEdit>::new();
-    let semantics = Semantics::new(db);
-
-    if let Some(min) = runner.minimum.clone() {
-        if from < min {
+    if let Some(min) = &runner.minimum {
+        if from < *min {
             return Error::NotMinimum(dep.into(), min.to_string()).print_err();
         }
     }
@@ -80,8 +74,14 @@ pub fn run(
         peers.extend(version.peers.clone());
         peers
     } else {
-        return Error::NoChanges(runner.version.to_string()).print_out();
+        return Error::NoChanges(dep.into(), runner.version.to_string()).print_out();
     };
+
+    let (host, vfs) = load_cargo(root, true, false).unwrap();
+    let db = host.raw_database();
+
+    let mut changes = Map::<FileId, TextEdit>::new();
+    let semantics = Semantics::new(db);
 
     let mut wrapper = RunnerWrapper::new(runner, semantics);
 
@@ -411,7 +411,11 @@ impl<'a> Visitor for RunnerWrapper<'a> {
         self.upgrader = upgrader;
     }
 
-    fn visit_record_expr_field(&mut self, record_expr_field: &ast::RecordExprField, _: &mut Options) {
+    fn visit_record_expr_field(
+        &mut self,
+        record_expr_field: &ast::RecordExprField,
+        _: &mut Options,
+    ) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);
 

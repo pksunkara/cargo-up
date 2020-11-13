@@ -1,14 +1,14 @@
 test:
-	cargo insta test --review -j 1 --features cli
+	cargo insta test --review -j 1 --features cli --no-default-features
 
 clap:
-	cargo run --features cli up --manifest-path ../../up_test/Cargo.toml \
+	cargo run --features cli --no-default-features up --manifest-path ../../../clap-rs/ripgrep/Cargo.toml \
 	dep clap \
-	--name clap_up --to-version 3.0.0-beta.1 --lib-path . \
+	--name clap_up --to-version 3.0.0-rc.0 --lib-path . \
 	--path ../../../clap-rs/clap/clap_up \
 
 run:
-	cargo run --features cli up --manifest-path ../fixtures/_run/on/Cargo.toml \
+	cargo run --features cli --no-default-features up --manifest-path ../fixtures/_run/on/Cargo.toml \
 	dep upgradee \
 	--name upgrader --to-version 0.3.0 --lib-path . \
 	--path ../fixtures/upgrader \
