@@ -96,7 +96,7 @@ pub fn run_upgrader(dir: &str, version: &str, generate: bool) -> (String, String
         ],
     );
 
-    let file_content = read_to_string(&fixture_on).unwrap();
+    let file_content = read_to_string(&fixture_on).unwrap().replace("\r\n", "\n");
     assert_snapshot!(file_content);
 
     write(&fixture_on, original).unwrap();
