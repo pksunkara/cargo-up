@@ -67,7 +67,7 @@ impl Dep {
             .iter()
             .find(|x| normalize(&x.name) == *dep)
             .ok_or(Error::PackageNotFound {
-                id: self.dep.clone(),
+                dep: self.dep.clone(),
             })?;
 
         if let Some(name) = &self.name {
@@ -92,7 +92,7 @@ impl Dep {
                     .call()
                     .into_json_deserialize::<Upgrader>()
                     .map_err(|_| Error::NoUpgrader {
-                        id: dep.clone(),
+                        dep: dep.clone(),
                         upgrader,
                     })?;
 

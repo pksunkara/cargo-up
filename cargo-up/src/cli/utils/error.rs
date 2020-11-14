@@ -7,10 +7,10 @@ use std::io;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("unable to find package {id} in your dependencies")]
-    PackageNotFound { id: String },
-    #[error("no upgrader {upgrader} found on crates.io for dependency {id}")]
-    NoUpgrader { id: String, upgrader: String },
+    #[error("unable to find crate {dep} in your dependencies")]
+    PackageNotFound { dep: String },
+    #[error("no upgrader {upgrader} found on crates.io for dependency {dep}")]
+    NoUpgrader { dep: String, upgrader: String },
     #[error("no crate {dep} found on crates.io")]
     NoDependency { dep: String },
     #[error("malformed version info from crates.io")]
@@ -44,11 +44,11 @@ impl Error {
 
     fn color(self) -> Self {
         match self {
-            Self::PackageNotFound { id } => Self::PackageNotFound {
-                id: YELLOW.apply_to(id).to_string(),
+            Self::PackageNotFound { dep } => Self::PackageNotFound {
+                dep: YELLOW.apply_to(dep).to_string(),
             },
-            Self::NoUpgrader { id, upgrader } => Self::NoUpgrader {
-                id: YELLOW.apply_to(id).to_string(),
+            Self::NoUpgrader { dep, upgrader } => Self::NoUpgrader {
+                dep: YELLOW.apply_to(dep).to_string(),
                 upgrader: YELLOW.apply_to(upgrader).to_string(),
             },
             Self::NoDependency { dep } => Self::NoDependency {

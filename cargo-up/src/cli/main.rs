@@ -46,7 +46,13 @@ fn main() {
         cmd.manifest_path(path);
     }
 
-    let metadata = cmd.exec().unwrap();
+    let metadata = match cmd.exec() {
+        Ok(x) => x,
+        Err(err) => {
+            eprintln!("{}", err.to_string());
+            exit(1);
+        }
+    };
 
     let err = match opt.subcommand {
         Subcommand::Dep(x) => x.run(metadata),
