@@ -52,7 +52,7 @@ fn get_path(path: &Option<String>) -> Result<String> {
     let path = current_dir()?.join(path.as_ref().expect(INTERNAL_ERR));
 
     Ok(format!(
-        r#"{{ path = "{}" }}"#,
+        r#"{{ path = {:?} }}"#,
         path.canonicalize().unwrap().to_string_lossy(),
     ))
 }
@@ -203,7 +203,7 @@ impl Dep {
                         .init();
 
                     run(
-                        Path::new("{}"),
+                        Path::new({:?}),
                         "{}",
                         runner(),
                         Version::parse("{}").unwrap(),
