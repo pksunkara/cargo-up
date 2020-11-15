@@ -1,0 +1,6 @@
+---
+source: tests/utils.rs
+expression: file_content
+---
+fn main() {}
+

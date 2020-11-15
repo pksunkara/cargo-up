@@ -31,6 +31,7 @@ ra_ap_base_db = { version = "=0.0.16", optional = true }
 ra_ap_rust-analyzer = { version = "=0.0.16", optional = true }
 rust-visitor = { path = "./rust-visitor", version = "0.2.1", optional = true }
 paste = { version = "1.0.2", optional = true }
+anyhow = { version = "1.0.34", optional = true }
 
 # required by bin
 clap = { version = "=3.0.0-beta.2", optional = true }
@@ -51,6 +52,7 @@ lib = [
 	"ra_ap_rust-analyzer",
 	"rust-visitor",
 	"paste",
+	"anyhow",
 ]
 cli = [
 	"clap",

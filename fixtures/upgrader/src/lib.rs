@@ -1,4 +1,16 @@
-use cargo_up::{Runner, Version};
+use cargo_up::{
+    anyhow::{bail, Result},
+    semver::Version as SemverVersion,
+    Runner, Upgrader, Version,
+};
+
+fn init(_: &mut Upgrader, from: &SemverVersion) -> Result<()> {
+    if from.to_string() == "0.4.0" {
+        bail!("Can't upgrade from 0.4.0");
+    }
+
+    Ok(())
+}
 
 pub fn runner() -> Runner {
     Runner::new()
@@ -27,4 +39,5 @@ pub fn runner() -> Runner {
                 .unwrap()
                 .rename_methods("structopt::StructOpt", &[["from_args", "parse"]]),
         )
+        .version(Version::new("0.5.0").unwrap().init(init))
 }

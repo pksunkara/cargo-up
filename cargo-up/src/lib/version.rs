@@ -4,6 +4,7 @@ use crate::{
     Semantics, Upgrader,
 };
 
+use anyhow::Result;
 use paste::paste;
 use rust_visitor::ra_ap_syntax::ast;
 
@@ -15,6 +16,7 @@ macro_rules! members {
             pub struct Version {
                 pub(crate) version: SemverVersion,
                 pub(crate) peers: Vec<String>,
+                pub(crate) init: Option<Box<dyn Fn(&mut Upgrader, &SemverVersion) -> Result<()>>>,
                 pub(crate) rename_structs: Map<String, Map<String, String>>,
                 pub(crate) rename_methods: Map<String, Map<String, String>>,
                 pub(crate) rename_members: Map<String, Map<String, String>>,
@@ -27,6 +29,7 @@ macro_rules! members {
                     Ok(Self {
                         version: SemverVersion::parse(version)?,
                         peers: vec![],
+                        init: None,
                         rename_structs: Map::new(),
                         rename_methods: Map::new(),
                         rename_members: Map::new(),
@@ -73,6 +76,14 @@ members!(
 impl Version {
     pub fn peers(mut self, peers: &[&str]) -> Self {
         self.peers = peers.to_vec().iter().map(|x| normalize(*x)).collect();
+        self
+    }
+
+    pub fn init<F>(mut self, init: F) -> Self
+    where
+        F: Fn(&mut Upgrader, &SemverVersion) -> Result<()> + 'static,
+    {
+        self.init = Some(Box::new(init));
         self
     }
 

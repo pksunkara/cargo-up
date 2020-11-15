@@ -7,12 +7,15 @@ use crate::{
     utils::{normalize, Error, INTERNAL_ERR, TERM_ERR, TERM_OUT},
     Preloader, Semantics, Upgrader, Version,
 };
+
+use anyhow::Result as AnyResult;
 use ra_ap_base_db::{FileId, SourceDatabaseExt};
 use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_rust_analyzer::cli::load_cargo;
 use ra_ap_text_edit::TextEdit;
 use rust_visitor::{Options, Visitor};
+
 use std::{
     collections::HashMap as Map,
     fs::{read_to_string, write},
@@ -84,6 +87,12 @@ pub fn run(
     let semantics = Semantics::new(db);
 
     let mut wrapper = RunnerWrapper::new(runner, semantics);
+
+    // Run init hook
+    if let Err(err) = wrapper.init(&from) {
+        TERM_ERR.write_line(&format!("{:?}", err))?;
+        return TERM_ERR.flush();
+    };
 
     // Loop to find and eager load the dep we are upgrading
     for krate in Crate::all(db) {
@@ -162,6 +171,16 @@ impl<'a> RunnerWrapper<'a> {
         self.runner.get_version()
     }
 
+    fn init(&mut self, from: &SemverVersion) -> AnyResult<()> {
+        let version = self.runner.get_version().expect(INTERNAL_ERR);
+
+        if let Some(f) = &version.init {
+            f(&mut self.upgrader, from)
+        } else {
+            Ok(())
+        }
+    }
+
     fn check_name_or_name_ref(
         name_or_name_ref: Option<ast::NameOrNameRef>,
         map: &Map<String, Map<String, String>>,
@@ -189,6 +208,7 @@ impl<'a> RunnerWrapper<'a> {
 impl<'a> Visitor for RunnerWrapper<'a> {
     fn visit_source_file(&mut self, _: &ast::SourceFile, _: &mut Options) {}
 
+    // TODO: Remove the upgrader clone/copy hack once constrained mutable checks are implemented in rust
     fn visit_method_call_expr(&mut self, method_call_expr: &ast::MethodCallExpr, _: &mut Options) {
         let mut upgrader = self.upgrader.clone();
         let version = self.get_version().expect(INTERNAL_ERR);

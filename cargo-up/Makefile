@@ -12,3 +12,9 @@ run:
 	dep upgradee \
 	--name upgrader --to-version 0.3.0 --lib-path . \
 	--path ../fixtures/upgrader \
+
+testcase:
+	cargo run --features cli --no-default-features up --manifest-path ../fixtures/$(case)/on/Cargo.toml \
+	dep upgradee \
+	--name upgrader --to-version $(version) --lib-path . \
+	--path ../fixtures/upgrader \

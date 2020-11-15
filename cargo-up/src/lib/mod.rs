@@ -1,5 +1,6 @@
 #![cfg(feature = "lib")]
 
+pub use anyhow;
 pub use rust_visitor::ra_ap_syntax;
 pub use semver;
 

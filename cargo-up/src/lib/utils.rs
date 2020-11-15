@@ -1,5 +1,6 @@
 use console::{Style, Term};
 use lazy_static::lazy_static;
+
 use std::io::Result;
 
 lazy_static! {
