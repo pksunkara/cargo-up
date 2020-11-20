@@ -12,9 +12,3 @@ fn test_no_upgrader() {
     let err = utils::run_err("../fixtures/minimum_version/on", &["up", "dep", "upgradee"]);
     assert_snapshot!(err);
 }
-
-#[test]
-fn test_bad_metadata() {
-    let err = utils::run_err("../fixtures/bad_metadata/on", &["up", "dep", "clap"]);
-    assert_snapshot!(err);
-}
