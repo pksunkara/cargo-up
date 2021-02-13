@@ -1,0 +1,8 @@
+---
+source: tests/hook.rs
+expression: err
+---
+
+
+Pre loading upgradee ... done
+

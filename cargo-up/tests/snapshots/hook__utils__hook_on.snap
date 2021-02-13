@@ -1,0 +1,12 @@
+---
+source: tests/utils.rs
+expression: file_content
+---
+use upgradee::Struct;
+
+fn main() {
+    let a = Struct {};
+
+    member;
+}
+

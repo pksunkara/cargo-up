@@ -1,3 +1,8 @@
+use crate::ra_ap_syntax::{
+    ast::{Name, NameRef, Path, PathSegment},
+    AstNode,
+};
+
 use ra_ap_text_edit::{TextEdit, TextEditBuilder, TextRange, TextSize};
 
 #[derive(Default, Debug, Clone)]
@@ -5,13 +10,54 @@ pub struct Upgrader {
     edit: TextEditBuilder,
 }
 
+pub trait ToTextRange {
+    fn to(self) -> TextRange;
+}
+
+impl ToTextRange for TextRange {
+    fn to(self) -> TextRange {
+        self
+    }
+}
+
+impl ToTextRange for Option<Path> {
+    fn to(self) -> TextRange {
+        self.unwrap().segment().unwrap().name_ref().to()
+    }
+}
+
+impl ToTextRange for Option<PathSegment> {
+    fn to(self) -> TextRange {
+        self.unwrap().name_ref().to()
+    }
+}
+
+impl ToTextRange for Option<NameRef> {
+    fn to(self) -> TextRange {
+        self.unwrap().syntax().text_range()
+    }
+}
+
+impl ToTextRange for Option<Name> {
+    fn to(self) -> TextRange {
+        self.unwrap().syntax().text_range()
+    }
+}
+
 impl Upgrader {
-    pub fn replace(&mut self, range: TextRange, replace_with: String) {
-        self.edit.replace(range, replace_with)
+    pub fn replace<T, S>(&mut self, range: T, replace_with: S)
+    where
+        T: ToTextRange,
+        S: Into<String>,
+    {
+        self.edit.replace(range.to(), replace_with.into())
     }
 
-    pub fn delete(&mut self, range: TextRange) {
-        self.edit.delete(range)
+    pub fn delete<T>(&mut self, range: T)
+    where
+        T: ToTextRange,
+    {
+        self.edit.delete(range.to())
     }
 
     pub fn insert(&mut self, offset: TextSize, text: String) {

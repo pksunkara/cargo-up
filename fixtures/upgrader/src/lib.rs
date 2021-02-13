@@ -1,5 +1,6 @@
 use cargo_up::{
     anyhow::{bail, Result},
+    ra_ap_syntax::AstNode,
     semver::Version as SemverVersion,
     Runner, Upgrader, Version,
 };
@@ -40,4 +41,11 @@ pub fn runner() -> Runner {
                 .rename_methods("structopt::StructOpt", &[["from_args", "parse"]]),
         )
         .version(Version::new("0.5.0").unwrap().init(init))
+        .version(Version::new("0.6.0").unwrap().hook_method_call_expr_on(
+            "upgradee::Struct",
+            "print",
+            |u, n, _| {
+                u.replace(n.syntax().text_range(), "member");
+            },
+        ))
 }

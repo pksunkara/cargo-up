@@ -72,3 +72,4 @@ members = [
 [dev-dependencies]
 insta = "0.16"
 assert_cmd = "1.0"
+serial_test = "0.5.1"

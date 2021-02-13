@@ -1,4 +1,5 @@
 use crate::{
+    helpers::{get_name, get_name_from_name, get_name_from_name_ref, get_name_from_path},
     ra_ap_syntax::{
         ast::{self, NameOwner},
         AstNode,
@@ -10,7 +11,7 @@ use crate::{
 
 use anyhow::Result as AnyResult;
 use ra_ap_base_db::{FileId, SourceDatabaseExt};
-use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, ModuleDef, PathResolution};
+use ra_ap_hir::{Adt, AssocItem, Crate, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_rust_analyzer::cli::load_cargo;
 use ra_ap_text_edit::TextEdit;
@@ -146,7 +147,7 @@ pub fn run(
     Ok(())
 }
 
-struct RunnerWrapper<'a> {
+pub(crate) struct RunnerWrapper<'a> {
     runner: Runner,
     preloader: Preloader,
     upgrader: Upgrader,
@@ -163,7 +164,7 @@ impl<'a> RunnerWrapper<'a> {
         }
     }
 
-    fn semantics(&self) -> &'a Semantics {
+    pub(crate) fn semantics(&self) -> &'a Semantics {
         &self.semantics
     }
 
@@ -180,29 +181,6 @@ impl<'a> RunnerWrapper<'a> {
             Ok(())
         }
     }
-
-    fn check_name_or_name_ref(
-        name_or_name_ref: Option<ast::NameOrNameRef>,
-        map: &Map<String, Map<String, String>>,
-    ) -> Option<bool> {
-        let name = match name_or_name_ref? {
-            ast::NameOrNameRef::NameRef(name_ref) => name_ref.text().to_string(),
-            ast::NameOrNameRef::Name(name) => name.text().to_string(),
-        };
-
-        Some(map.iter().any(|x| x.1.iter().any(|y| *y.0 == name)))
-    }
-
-    fn check_name_ref(
-        name_ref: Option<ast::NameRef>,
-        map: &Map<String, Map<String, String>>,
-    ) -> Option<bool> {
-        Self::check_name_or_name_ref(name_ref.map(|x| ast::NameOrNameRef::NameRef(x)), map)
-    }
-
-    fn check_path(path: Option<ast::Path>, map: &Map<String, Map<String, String>>) -> Option<bool> {
-        Self::check_name_ref(path?.segment()?.name_ref(), map)
-    }
 }
 
 impl<'a> Visitor for RunnerWrapper<'a> {
@@ -217,22 +195,14 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, method_call_expr, self.semantics());
         }
 
-        if let Some(true) =
-            Self::check_name_ref(method_call_expr.name_ref(), &version.rename_methods)
-        {
-            if let Some(f) = self.semantics().resolve_method_call(method_call_expr) {
-                if let Some((_, name)) = self.preloader.methods.iter().find(|x| *x.0 == f) {
-                    if let Some(map) = version.rename_methods.get(name) {
-                        let name_ref = method_call_expr.name_ref().expect(INTERNAL_ERR);
-                        let method_name = name_ref.text().to_string();
-
-                        if let Some(to) = map.get(&method_name) {
-                            upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                        }
-                    }
-                }
-            }
-        }
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.methods,
+            &version.hook_method_call_expr_on,
+            method_call_expr,
+            |n| get_name_from_name_ref(n.name_ref()),
+            |s, n| s.resolve_method_call(n),
+        );
 
         self.upgrader = upgrader;
     }
@@ -256,20 +226,20 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, ident_pat, self.semantics());
         }
 
-        if let Some(ModuleDef::EnumVariant(e)) =
-            self.semantics().resolve_bind_pat_to_const(ident_pat)
-        {
-            if let Some((_, name)) = self.preloader.variants.iter().find(|x| *x.0 == e) {
-                if let Some(map) = version.rename_variants.get(name) {
-                    let name_ref = ident_pat.name().expect(INTERNAL_ERR);
-                    let variant_name = name_ref.text().to_string();
-
-                    if let Some(to) = map.get(&variant_name) {
-                        upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                    }
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.variants,
+            &version.hook_ident_pat_on,
+            ident_pat,
+            |n| get_name_from_name(n.name()),
+            |s, n| {
+                if let Some(ModuleDef::EnumVariant(x)) = s.resolve_bind_pat_to_const(n) {
+                    Some(x)
+                } else {
+                    None
                 }
-            }
-        }
+            },
+        );
 
         self.upgrader = upgrader;
     }
@@ -282,26 +252,21 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, path, self.semantics());
         }
 
-        if let Some(true) = Self::check_path(Some(path.clone()), &version.rename_structs) {
-            if let Some(PathResolution::Def(ModuleDef::Adt(Adt::Struct(s)))) =
-                self.semantics().resolve_path(path)
-            {
-                if let Some((_, name)) = self.preloader.structs.iter().find(|x| *x.0 == s) {
-                    if let Some(map) = version.rename_structs.get(name) {
-                        let name_ref = path
-                            .segment()
-                            .expect(INTERNAL_ERR)
-                            .name_ref()
-                            .expect(INTERNAL_ERR);
-                        let struct_name = name_ref.text().to_string();
-
-                        if let Some(to) = map.get(&struct_name) {
-                            upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                        }
-                    }
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.structs,
+            &version.hook_path_on,
+            path,
+            |n| get_name_from_path(Some(n.clone())),
+            |s, n| {
+                if let Some(PathResolution::Def(ModuleDef::Adt(Adt::Struct(x)))) = s.resolve_path(n)
+                {
+                    Some(x)
+                } else {
+                    None
                 }
-            }
-        }
+            },
+        );
 
         self.upgrader = upgrader;
     }
@@ -314,36 +279,39 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, path_expr, self.semantics());
         }
 
-        if let Some(true) = Self::check_path(path_expr.path(), &version.rename_methods) {
-            let path = path_expr.path().expect(INTERNAL_ERR);
-
-            if let Some(PathResolution::AssocItem(AssocItem::Function(f))) =
-                self.semantics().resolve_path(&path)
-            {
-                if let Some((_, name)) = self.preloader.methods.iter().find(|x| *x.0 == f) {
-                    if let Some(map) = version.rename_methods.get(name) {
-                        let name_ref = path
-                            .segment()
-                            .expect(INTERNAL_ERR)
-                            .name_ref()
-                            .expect(INTERNAL_ERR);
-                        let method_name = name_ref.text().to_string();
-
-                        if let Some(to) = map.get(&method_name) {
-                            upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                        }
-                    }
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.methods,
+            &version.hook_path_expr_on,
+            path_expr,
+            |n| get_name_from_path(n.path()),
+            |s, n| {
+                if let Some(PathResolution::AssocItem(AssocItem::Function(x))) =
+                    s.resolve_path(&n.path().expect(INTERNAL_ERR))
+                {
+                    Some(x)
+                } else {
+                    None
                 }
-            }
-        } else {
-            rename_variants(
-                path_expr.path(),
-                &self.preloader.variants,
-                &version.rename_variants,
-                self.semantics(),
-                &mut upgrader,
-            );
-        }
+            },
+        );
+
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.variants,
+            &version.hook_path_expr_on,
+            path_expr,
+            |n| get_name_from_path(n.path()),
+            |s, n| {
+                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                    s.resolve_path(&n.path().expect(INTERNAL_ERR))
+                {
+                    Some(x)
+                } else {
+                    None
+                }
+            },
+        );
 
         self.upgrader = upgrader;
     }
@@ -356,12 +324,21 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, path_pat, self.semantics());
         }
 
-        rename_variants(
-            path_pat.path(),
-            &self.preloader.variants,
-            &version.rename_variants,
-            self.semantics(),
+        self.run_hooks(
             &mut upgrader,
+            &self.preloader.variants,
+            &version.hook_path_pat_on,
+            path_pat,
+            |n| get_name_from_path(n.path()),
+            |s, n| {
+                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                    s.resolve_path(&n.path().expect(INTERNAL_ERR))
+                {
+                    Some(x)
+                } else {
+                    None
+                }
+            },
         );
 
         self.upgrader = upgrader;
@@ -375,20 +352,14 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, field_expr, self.semantics());
         }
 
-        if let Some(true) = Self::check_name_ref(field_expr.name_ref(), &version.rename_members) {
-            if let Some(f) = self.semantics().resolve_field(field_expr) {
-                if let Some((_, name)) = self.preloader.members.iter().find(|x| *x.0 == f) {
-                    if let Some(map) = version.rename_members.get(name) {
-                        let name_ref = field_expr.name_ref().expect(INTERNAL_ERR);
-                        let member_name = name_ref.text().to_string();
-
-                        if let Some(to) = map.get(&member_name) {
-                            upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                        }
-                    }
-                }
-            }
-        }
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.members,
+            &version.hook_field_expr_on,
+            field_expr,
+            |n| get_name_from_name_ref(n.name_ref()),
+            |s, n| s.resolve_field(n),
+        );
 
         self.upgrader = upgrader;
     }
@@ -401,12 +372,21 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, record_pat, self.semantics());
         }
 
-        rename_variants(
-            record_pat.path(),
-            &self.preloader.variants,
-            &version.rename_variants,
-            self.semantics(),
+        self.run_hooks(
             &mut upgrader,
+            &self.preloader.variants,
+            &version.hook_record_pat_on,
+            record_pat,
+            |n| get_name_from_path(n.path()),
+            |s, n| {
+                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                    s.resolve_path(&n.path().expect(INTERNAL_ERR))
+                {
+                    Some(x)
+                } else {
+                    None
+                }
+            },
         );
 
         self.upgrader = upgrader;
@@ -420,12 +400,21 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, record_expr, self.semantics());
         }
 
-        rename_variants(
-            record_expr.path(),
-            &self.preloader.variants,
-            &version.rename_variants,
-            self.semantics(),
+        self.run_hooks(
             &mut upgrader,
+            &self.preloader.variants,
+            &version.hook_record_expr_on,
+            record_expr,
+            |n| get_name_from_path(n.path()),
+            |s, n| {
+                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                    s.resolve_path(&n.path().expect(INTERNAL_ERR))
+                {
+                    Some(x)
+                } else {
+                    None
+                }
+            },
         );
 
         self.upgrader = upgrader;
@@ -443,42 +432,20 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, record_expr_field, self.semantics());
         }
 
-        if let Some(true) =
-            Self::check_name_ref(record_expr_field.field_name(), &version.rename_members)
-        {
-            if let Some(f) = self.semantics().resolve_record_field(record_expr_field) {
-                if let Some((_, name)) = self.preloader.members.iter().find(|x| *x.0 == f.0) {
-                    if let Some(map) = version.rename_members.get(name) {
-                        if let Some(name_ref) = record_expr_field.name_ref() {
-                            let member_name = name_ref.text().to_string();
-
-                            if let Some(to) = map.get(&member_name) {
-                                upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                            }
-                        } else if let Some(ast::Expr::PathExpr(path_expr)) =
-                            record_expr_field.expr()
-                        {
-                            let member_name = path_expr
-                                .path()
-                                .expect(INTERNAL_ERR)
-                                .segment()
-                                .expect(INTERNAL_ERR)
-                                .name_ref()
-                                .expect(INTERNAL_ERR)
-                                .text()
-                                .to_string();
-
-                            if let Some(to) = map.get(&member_name) {
-                                upgrader.replace(
-                                    path_expr.syntax().text_range(),
-                                    format!("{}: {}", to, member_name),
-                                );
-                            }
-                        }
-                    }
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.members,
+            &version.hook_record_expr_field_on,
+            record_expr_field,
+            |n| get_name_from_name_ref(n.field_name()),
+            |s, n| {
+                if let Some((x, _)) = s.resolve_record_field(n) {
+                    Some(x)
+                } else {
+                    None
                 }
-            }
-        }
+            },
+        );
 
         self.upgrader = upgrader;
     }
@@ -491,37 +458,14 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, record_pat_field, self.semantics());
         }
 
-        if let Some(true) =
-            Self::check_name_or_name_ref(record_pat_field.field_name(), &version.rename_members)
-        {
-            if let Some(f) = self.semantics().resolve_record_pat_field(record_pat_field) {
-                if let Some((_, name)) = self.preloader.members.iter().find(|x| *x.0 == f) {
-                    if let Some(map) = version.rename_members.get(name) {
-                        match record_pat_field.field_name() {
-                            Some(ast::NameOrNameRef::Name(name)) => {
-                                let member_name = name.text().to_string();
-
-                                if let Some(to) = map.get(&member_name) {
-                                    upgrader.replace(
-                                        record_pat_field.syntax().text_range(),
-                                        format!("{}: {}", to, record_pat_field),
-                                    );
-                                }
-                            }
-                            Some(ast::NameOrNameRef::NameRef(name_ref)) => {
-                                let member_name = name_ref.text().to_string();
-
-                                if let Some(to) = map.get(&member_name) {
-                                    upgrader
-                                        .replace(name_ref.syntax().text_range(), to.to_string());
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            }
-        }
+        self.run_hooks(
+            &mut upgrader,
+            &self.preloader.members,
+            &version.hook_record_pat_field_on,
+            record_pat_field,
+            |n| get_name(n.field_name()),
+            |s, n| s.resolve_record_pat_field(n),
+        );
 
         self.upgrader = upgrader;
     }
@@ -534,45 +478,23 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             hook(&mut upgrader, tuple_struct_pat, self.semantics());
         }
 
-        rename_variants(
-            tuple_struct_pat.path(),
-            &self.preloader.variants,
-            &version.rename_variants,
-            self.semantics(),
+        self.run_hooks(
             &mut upgrader,
+            &self.preloader.variants,
+            &version.hook_tuple_struct_pat_on,
+            tuple_struct_pat,
+            |n| get_name_from_path(n.path()),
+            |s, n| {
+                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                    s.resolve_path(&n.path().expect(INTERNAL_ERR))
+                {
+                    Some(x)
+                } else {
+                    None
+                }
+            },
         );
 
         self.upgrader = upgrader;
-    }
-}
-
-// TODO: Maybe return Option<bool>
-fn rename_variants(
-    path: Option<ast::Path>,
-    variants: &Map<EnumVariant, String>,
-    map: &Map<String, Map<String, String>>,
-    semantics: &Semantics,
-    upgrader: &mut Upgrader,
-) {
-    if let Some(true) = RunnerWrapper::check_path(path.clone(), map) {
-        let path = path.expect(INTERNAL_ERR);
-
-        if let Some(PathResolution::Def(ModuleDef::EnumVariant(e))) = semantics.resolve_path(&path)
-        {
-            if let Some((_, name)) = variants.iter().find(|x| *x.0 == e) {
-                if let Some(map) = map.get(name) {
-                    let name_ref = path
-                        .segment()
-                        .expect(INTERNAL_ERR)
-                        .name_ref()
-                        .expect(INTERNAL_ERR);
-                    let variant_name = name_ref.text().to_string();
-
-                    if let Some(to) = map.get(&variant_name) {
-                        upgrader.replace(name_ref.syntax().text_range(), to.to_string());
-                    }
-                }
-            }
-        }
     }
 }

@@ -1,8 +1,10 @@
 use crate::utils::TERM_ERR;
+
 use ra_ap_hir::{
     Adt, AssocItem, Crate, EnumVariant, Field, Function, Module, ModuleDef, ScopeDef, Struct,
 };
 use ra_ap_ide_db::RootDatabase;
+
 use std::collections::HashMap as Map;
 
 #[derive(Debug, Default)]
