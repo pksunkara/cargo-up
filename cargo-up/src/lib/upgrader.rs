@@ -22,7 +22,7 @@ impl ToTextRange for TextRange {
 
 impl ToTextRange for Option<Path> {
     fn to(self) -> TextRange {
-        self.unwrap().segment().unwrap().name_ref().to()
+        self.unwrap().segment().to()
     }
 }
 
@@ -60,8 +60,11 @@ impl Upgrader {
         self.edit.delete(range.to())
     }
 
-    pub fn insert(&mut self, offset: TextSize, text: String) {
-        self.edit.insert(offset, text)
+    pub fn insert<S>(&mut self, offset: TextSize, text: S)
+    where
+        S: Into<String>,
+    {
+        self.edit.insert(offset, text.into())
     }
 
     pub fn add_dep(&mut self) {}

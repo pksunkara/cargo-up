@@ -1,8 +1,6 @@
 use crate::utils::TERM_ERR;
 
-use ra_ap_hir::{
-    Adt, AssocItem, Crate, EnumVariant, Field, Function, Module, ModuleDef, ScopeDef, Struct,
-};
+use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, Field, Function, Module, ModuleDef, Struct};
 use ra_ap_ide_db::RootDatabase;
 
 use std::collections::HashMap as Map;
@@ -33,10 +31,10 @@ impl Preloader {
     }
 
     fn load_module(&mut self, db: &RootDatabase, module: &Module, path: Vec<String>) {
-        for (_, scope) in module.scope(db, None) {
-            match scope {
+        for def in module.declarations(db) {
+            match def {
                 // Load struct && members
-                ScopeDef::ModuleDef(ModuleDef::Adt(Adt::Struct(s))) => {
+                ModuleDef::Adt(Adt::Struct(s)) => {
                     self.structs.insert(s.clone(), path.join("::"));
 
                     let name = format!("{}::{}", path.join("::"), s.name(db));
@@ -46,7 +44,7 @@ impl Preloader {
                     }
                 }
                 // Load union memebrs
-                ScopeDef::ModuleDef(ModuleDef::Adt(Adt::Union(u))) => {
+                ModuleDef::Adt(Adt::Union(u)) => {
                     let name = format!("{}::{}", path.join("::"), u.name(db));
 
                     for field in u.fields(db) {
@@ -54,7 +52,7 @@ impl Preloader {
                     }
                 }
                 // Load enum variants
-                ScopeDef::ModuleDef(ModuleDef::Adt(Adt::Enum(e))) => {
+                ModuleDef::Adt(Adt::Enum(e)) => {
                     let name = format!("{}::{}", path.join("::"), e.name(db));
 
                     for variant in e.variants(db) {

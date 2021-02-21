@@ -2,7 +2,7 @@ test:
 	cargo insta test --review -j 1 --features cli --no-default-features
 
 clap:
-	cargo run --features cli --no-default-features up --manifest-path ../../../clap-rs/ripgrep/Cargo.toml \
+	cargo run --features cli --no-default-features up --manifest-path ../../../clap-rs/v2/Cargo.toml \
 	dep clap \
 	--name clap_up --to-version 3.0.0-rc.0 --lib-path . \
 	--path ../../../clap-rs/clap/clap_up \
