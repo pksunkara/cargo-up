@@ -1,6 +1,4 @@
-use crate::utils::term::{RED_BOLD, TERM_ERR, YELLOW};
-
-use console::Term;
+use oclif::{term::ERR_YELLOW, CliError};
 use thiserror::Error;
 
 use std::io;
@@ -25,7 +23,7 @@ pub enum Error {
     Building { upgrader: String },
     #[error("unable to execute the built upgrader command, got {err}")]
     Runner { err: io::Error },
-    #[error("unable to upgrade your codebase, please file an issue with the {upgrader}")]
+    #[error("unable to upgrade your codebase, please file an issue with {upgrader} if this is unexpected")]
     Upgrading { upgrader: String },
 
     #[error("{0}")]
@@ -36,37 +34,26 @@ pub enum Error {
     FromUtf8(#[from] std::string::FromUtf8Error),
 }
 
-// From https://github.com/pksunkara/cargo-workspaces/blob/master/cargo-workspaces/src/utils/error.rs
-impl Error {
-    pub fn print_err(self) -> io::Result<()> {
-        self.print(&TERM_ERR)
-    }
-
+impl CliError for Error {
     fn color(self) -> Self {
         match self {
             Self::PackageNotFound { dep } => Self::PackageNotFound {
-                dep: YELLOW.apply_to(dep).to_string(),
+                dep: ERR_YELLOW.apply_to(dep).to_string(),
             },
             Self::NoUpgrader { dep, upgrader } => Self::NoUpgrader {
-                dep: YELLOW.apply_to(dep).to_string(),
-                upgrader: YELLOW.apply_to(upgrader).to_string(),
+                dep: ERR_YELLOW.apply_to(dep).to_string(),
+                upgrader: ERR_YELLOW.apply_to(upgrader).to_string(),
             },
             Self::NoDependency { dep } => Self::NoDependency {
-                dep: YELLOW.apply_to(dep).to_string(),
+                dep: ERR_YELLOW.apply_to(dep).to_string(),
             },
             Self::Building { upgrader } => Self::Building {
-                upgrader: YELLOW.apply_to(upgrader).to_string(),
+                upgrader: ERR_YELLOW.apply_to(upgrader).to_string(),
             },
             Self::Upgrading { upgrader } => Self::Upgrading {
-                upgrader: YELLOW.apply_to(upgrader).to_string(),
+                upgrader: ERR_YELLOW.apply_to(upgrader).to_string(),
             },
             _ => self,
         }
-    }
-
-    pub fn print(self, term: &Term) -> io::Result<()> {
-        term.write_str(&format!("{}: ", RED_BOLD.apply_to("error").to_string()))?;
-        term.write_line(&self.color().to_string())?;
-        term.flush()
     }
 }

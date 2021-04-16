@@ -5,11 +5,12 @@ use crate::{
         AstNode,
     },
     semver::{SemVerError, Version as SemverVersion},
-    utils::{normalize, Error, INTERNAL_ERR, TERM_ERR, TERM_OUT},
+    utils::{normalize, Error, INTERNAL_ERR},
     Preloader, Semantics, Upgrader, Version,
 };
 
 use anyhow::Result as AnyResult;
+use oclif::term::{OUT_YELLOW, TERM_OUT};
 use ra_ap_base_db::{FileId, SourceDatabaseExt};
 use ra_ap_hir::{Adt, AssocItem, Crate, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
@@ -20,7 +21,6 @@ use rust_visitor::{Options, Visitor};
 use std::{
     collections::HashMap as Map,
     fs::{read_to_string, write},
-    io::Result as IoResult,
     path::Path,
 };
 
@@ -63,10 +63,10 @@ pub fn run(
     mut runner: Runner,
     from: SemverVersion,
     to: SemverVersion,
-) -> IoResult<()> {
+) -> Result<(), Error> {
     if let Some(min) = &runner.minimum {
         if from < *min {
-            return Error::NotMinimum(dep.into(), min.to_string()).print_err();
+            return Err(Error::NotMinimum(dep.into(), min.to_string()));
         }
     }
 
@@ -78,7 +78,11 @@ pub fn run(
         peers.extend(version.peers.clone());
         peers
     } else {
-        return Error::NoChanges(dep.into(), runner.version.to_string()).print_out();
+        return Ok(TERM_OUT.write_line(&format!(
+            "Upgrader for crate {} has not described any changes for {} version",
+            OUT_YELLOW.apply_to(dep),
+            OUT_YELLOW.apply_to(runner.version),
+        ))?);
     };
 
     let (host, vfs) = load_cargo(root, true, false).unwrap();
@@ -90,10 +94,7 @@ pub fn run(
     let mut wrapper = RunnerWrapper::new(runner, semantics);
 
     // Run init hook
-    if let Err(err) = wrapper.init(&from) {
-        TERM_ERR.write_line(&format!("{:?}", err))?;
-        return TERM_ERR.flush();
-    };
+    wrapper.init(&from)?;
 
     // Loop to find and eager load the dep we are upgrading
     for krate in Crate::all(db) {
@@ -140,9 +141,6 @@ pub fn run(
     }
 
     // TODO: Modify Cargo.toml
-
-    TERM_ERR.flush()?;
-    TERM_OUT.flush()?;
 
     Ok(())
 }

@@ -8,7 +8,7 @@ use crate::{
     Semantics, Upgrader,
 };
 
-use anyhow::Result;
+use anyhow::Result as AnyResult;
 use paste::paste;
 
 use std::{collections::HashMap as Map, ops::Deref};
@@ -56,7 +56,7 @@ macro_rules! members {
             pub struct Version {
                 pub(crate) version: SemverVersion,
                 pub(crate) peers: Vec<String>,
-                pub(crate) init: Option<Box<dyn Fn(&mut Upgrader, &SemverVersion) -> Result<()>>>,
+                pub(crate) init: Option<Box<dyn Fn(&mut Upgrader, &SemverVersion) -> AnyResult<()>>>,
                 $(
                     pub(crate) [<hook_ $node:snake>]: Vec<Hook<ast::$node>>,
                     pub(crate) [<hook_ $node:snake _on>]: Hooks<ast::$node>,
@@ -127,7 +127,7 @@ impl Version {
 
     pub fn init<F>(mut self, init: F) -> Self
     where
-        F: Fn(&mut Upgrader, &SemverVersion) -> Result<()> + 'static,
+        F: Fn(&mut Upgrader, &SemverVersion) -> AnyResult<()> + 'static,
     {
         self.init = Some(Box::new(init));
         self

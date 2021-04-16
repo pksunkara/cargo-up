@@ -1,12 +1,11 @@
 use cargo_metadata::{CargoOpt, MetadataCommand};
 use clap::{AppSettings, Clap};
+use oclif::finish;
 
 use std::process::exit;
 
 mod dep;
 mod utils;
-
-use utils::term::{TERM_ERR, TERM_OUT};
 
 #[derive(Debug, Clap)]
 enum Subcommand {
@@ -54,20 +53,9 @@ fn main() {
         }
     };
 
-    let err = match opt.subcommand {
+    let result = match opt.subcommand {
         Subcommand::Dep(x) => x.run(metadata),
-    }
-    .err();
-
-    let code = if let Some(e) = err {
-        e.print_err().unwrap();
-        1
-    } else {
-        0
     };
 
-    TERM_ERR.flush().unwrap();
-    TERM_OUT.flush().unwrap();
-
-    exit(code)
+    finish(result)
 }

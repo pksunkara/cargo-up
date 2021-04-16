@@ -1,13 +1,12 @@
 use crate::utils::{
     cargo,
     crates::{Upgrader, Versions},
-    normalize,
-    term::{TERM_OUT, YELLOW},
-    Error, Result, INTERNAL_ERR,
+    normalize, Error, Result, INTERNAL_ERR,
 };
 
 use cargo_metadata::{Metadata, Package};
 use clap::{crate_version, Clap};
+use oclif::term::{OUT_YELLOW, TERM_OUT};
 use semver::Version;
 
 use std::{
@@ -122,9 +121,9 @@ impl Dep {
 
             for to_version in versions {
                 TERM_OUT.write_line(&format!(
-                    "Upgrading {} dependency to {} version ...",
-                    YELLOW.apply_to(&self.dep),
-                    YELLOW.apply_to(&to_version),
+                    "Trying to upgrade {} dependency to {} version ...",
+                    OUT_YELLOW.apply_to(&self.dep),
+                    OUT_YELLOW.apply_to(&to_version),
                 ))?;
                 TERM_OUT.flush()?;
 
@@ -178,6 +177,7 @@ impl Dep {
                 [dependencies]
                 log = "0.4"
                 env_logger = "0.7"
+                oclif = "0.3"
                 cargo-up = {}
                 {} = {}
                 "#,
@@ -189,6 +189,7 @@ impl Dep {
             cache_dir.join("src").join("main.rs"),
             format!(
                 r#"
+                use oclif::finish;
                 use cargo_up::{{semver::Version, run, Runner}};
                 use std::path::Path;
 
@@ -202,13 +203,15 @@ impl Dep {
                         .format_timestamp(None)
                         .init();
 
-                    run(
+                    let result = run(
                         Path::new({:?}),
                         "{}",
                         runner(),
                         Version::parse("{}").unwrap(),
                         Version::parse("{}").unwrap(),
-                    ).unwrap();
+                    );
+
+                    finish(result);
                 }}
                 "#,
                 upgrader,

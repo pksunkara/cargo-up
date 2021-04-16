@@ -1,52 +1,28 @@
-use console::{Style, Term};
-use lazy_static::lazy_static;
-
-use std::io::Result;
-
-lazy_static! {
-    pub(crate) static ref TERM_ERR: Term = Term::stderr();
-    pub(crate) static ref TERM_OUT: Term = Term::stdout();
-    pub(crate) static ref YELLOW: Style = Style::new().for_stderr().yellow();
-    pub(crate) static ref YELLOW_OUT: Style = Style::new().yellow();
-    pub(crate) static ref RED_BOLD: Style = Style::new().for_stderr().red().bold();
-}
-
+use oclif::{term::ERR_YELLOW, CliError};
 use thiserror::Error;
 
+use std::io;
+
+#[doc(hidden)]
 #[derive(Error, Debug)]
-pub(crate) enum Error {
-    #[error("Upgrader for crate {0} has not described any changes for {1} version")]
-    NoChanges(String, String),
-    #[error("minimum version of `{0}` that should be upgraded from is {1}")]
+pub enum Error {
+    #[error("minimum version of {0} that should be upgraded from is {1}")]
     NotMinimum(String, String),
+    #[error("{0}")]
+    Io(#[from] io::Error),
+    #[error("{0}")]
+    Any(#[from] anyhow::Error),
 }
 
-impl Error {
-    pub fn print_out(self) -> Result<()> {
-        self.print(&TERM_OUT)
-    }
-
-    pub fn print_err(self) -> Result<()> {
-        TERM_ERR.write_str(&format!("{}: ", RED_BOLD.apply_to("error")))?;
-        self.print(&TERM_ERR)
-    }
-
+impl CliError for Error {
     fn color(self) -> Self {
         match self {
-            Self::NoChanges(dep, version) => Self::NoChanges(
-                YELLOW_OUT.apply_to(dep).to_string(),
-                YELLOW_OUT.apply_to(version).to_string(),
-            ),
             Self::NotMinimum(dep, min) => Self::NotMinimum(
-                YELLOW.apply_to(dep).to_string(),
-                YELLOW.apply_to(min).to_string(),
+                ERR_YELLOW.apply_to(dep).to_string(),
+                ERR_YELLOW.apply_to(min).to_string(),
             ),
+            _ => self,
         }
-    }
-
-    fn print(self, term: &Term) -> Result<()> {
-        term.write_line(&self.color().to_string())?;
-        term.flush()
     }
 }
 

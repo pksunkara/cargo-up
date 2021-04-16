@@ -1,7 +1,6 @@
 mod cargo;
 pub mod crates;
 mod error;
-pub mod term;
 
 pub use cargo::cargo;
 pub use error::Error;
