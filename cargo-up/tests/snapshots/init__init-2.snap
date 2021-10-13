@@ -1,8 +1,10 @@
 ---
 source: tests/init.rs
 expression: err
+
 ---
 
 
-Can't upgrade from 0.4.0
+error: Can't upgrade from 0.4.0
+error: unable to upgrade your codebase, please file an issue with upgrader if this is unexpected
 

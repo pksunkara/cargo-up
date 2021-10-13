@@ -1,6 +1,6 @@
 use crate::{
     ra_ap_syntax::{
-        ast::{self, Expr, NameOrNameRef, NameOwner},
+        ast::{self, Expr, HasName, NameOrNameRef},
         AstNode,
     },
     semver::{SemVerError, Version as SemverVersion},

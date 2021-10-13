@@ -1,8 +1,10 @@
 ---
 source: tests/minimum_version.rs
 expression: err
+
 ---
 
 
-error: minimum version of `upgradee` that should be upgraded from is 0.2.0
+error: minimum version of upgradee that should be upgraded from is 0.2.0
+error: unable to upgrade your codebase, please file an issue with upgrader if this is unexpected
 

@@ -1,7 +1,7 @@
 use crate::{
     helpers::{get_name, get_name_from_name, get_name_from_name_ref, get_name_from_path},
     ra_ap_syntax::{
-        ast::{self, NameOwner},
+        ast::{self, HasName},
         AstNode,
     },
     semver::{SemVerError, Version as SemverVersion},
@@ -10,11 +10,14 @@ use crate::{
 };
 
 use anyhow::Result as AnyResult;
+use log::{debug, info, trace};
 use oclif::term::{OUT_YELLOW, TERM_OUT};
-use ra_ap_base_db::{FileId, SourceDatabaseExt};
+use ra_ap_base_db::{FileId, SourceDatabase, SourceDatabaseExt};
 use ra_ap_hir::{Adt, AssocItem, Crate, ModuleDef, PathResolution};
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
-use ra_ap_rust_analyzer::cli::load_cargo;
+use ra_ap_paths::AbsPathBuf;
+use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace};
+use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
 use ra_ap_text_edit::TextEdit;
 use rust_visitor::{Options, Visitor};
 
@@ -64,6 +67,8 @@ pub fn run(
     from: SemverVersion,
     to: SemverVersion,
 ) -> Result<(), Error> {
+    info!("Workspace root: {}", root.display());
+
     if let Some(min) = &runner.minimum {
         if from < *min {
             return Err(Error::NotMinimum(dep.into(), min.to_string()));
@@ -85,27 +90,42 @@ pub fn run(
         ))?);
     };
 
-    let (host, vfs) = load_cargo(root, true, false).unwrap();
-    let db = host.raw_database();
+    // Loading project
+    let manifest = ProjectManifest::discover_single(&AbsPathBuf::assert(root.into())).unwrap();
 
-    let mut changes = Map::<FileId, TextEdit>::new();
+    let no_progress = &|_| {};
+
+    let mut cargo_config = CargoConfig::default();
+    cargo_config.no_sysroot = true;
+
+    let mut workspace = ProjectWorkspace::load(manifest, &cargo_config, no_progress)?;
+    let bs = workspace.run_build_scripts(&cargo_config, no_progress)?;
+    workspace.set_build_scripts(bs);
+
+    let load_cargo_config = LoadCargoConfig {
+        load_out_dirs_from_check: true,
+        with_proc_macro: true,
+        prefill_caches: false,
+    };
+    let (host, vfs, _) = load_workspace(workspace, &load_cargo_config).unwrap();
+
+    // Preparing running wrapper
+    let db = host.raw_database();
     let semantics = Semantics::new(db);
 
+    let mut changes = Map::<FileId, TextEdit>::new();
     let mut wrapper = RunnerWrapper::new(runner, semantics);
 
     // Run init hook
     wrapper.init(&from)?;
 
+    trace!("Crate graph: {:#?}", db.crate_graph());
+
     // Loop to find and eager load the dep we are upgrading
     for krate in Crate::all(db) {
-        let file_id = krate.root_file(db);
-        let source_root = db.source_root(db.file_source_root(file_id));
-
-        if !source_root.is_library {
-            continue;
-        }
-
         if let Some(name) = krate.display_name(db) {
+            debug!("Checking if we need to preload: {}", name);
+
             if let Some(peer) = peers
                 .iter()
                 .find(|x| **x == normalize(&format!("{}", name)))
@@ -118,14 +138,38 @@ pub fn run(
     // Actual loop to walk through the source code
     for source_root_id in db.local_roots().iter() {
         let source_root = db.source_root(*source_root_id);
+        let krates = db.source_root_crates(*source_root_id);
+
+        // Get all crates for this source root and skip if no root files of those crates
+        // are in the root path we are upgrading.
+        if !krates
+            .iter()
+            .filter_map(|crate_id| {
+                let krate: Crate = (*crate_id).into();
+                source_root.path_for_file(&krate.root_file(db))
+            })
+            .filter_map(|path| path.as_path())
+            .any(|path| {
+                debug!("Checking if path in workspace: {}", path.display());
+                path.as_ref().starts_with(root)
+            })
+        {
+            continue;
+        }
 
         for file_id in source_root.iter() {
+            let file = vfs.file_path(file_id);
+            info!("Walking: {}", file.as_path().expect(INTERNAL_ERR).display());
+
             let source_file = wrapper.semantics.parse(file_id);
-            // println!("{:#?}", source_file.syntax());
+            trace!("Syntax: {:#?}", source_file.syntax());
 
             wrapper.walk(source_file.syntax());
 
-            changes.insert(file_id, wrapper.upgrader.finish());
+            let edit = wrapper.upgrader.finish();
+            debug!("Changes to be made: {:#?}", edit);
+
+            changes.insert(file_id, edit);
         }
     }
 
@@ -231,7 +275,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             ident_pat,
             |n| get_name_from_name(n.name()),
             |s, n| {
-                if let Some(ModuleDef::EnumVariant(x)) = s.resolve_bind_pat_to_const(n) {
+                if let Some(ModuleDef::Variant(x)) = s.resolve_bind_pat_to_const(n) {
                     Some(x)
                 } else {
                     None
@@ -301,7 +345,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             path_expr,
             |n| get_name_from_path(n.path()),
             |s, n| {
-                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                if let Some(PathResolution::Def(ModuleDef::Variant(x))) =
                     s.resolve_path(&n.path().expect(INTERNAL_ERR))
                 {
                     Some(x)
@@ -329,7 +373,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             path_pat,
             |n| get_name_from_path(n.path()),
             |s, n| {
-                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                if let Some(PathResolution::Def(ModuleDef::Variant(x))) =
                     s.resolve_path(&n.path().expect(INTERNAL_ERR))
                 {
                     Some(x)
@@ -377,7 +421,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             record_pat,
             |n| get_name_from_path(n.path()),
             |s, n| {
-                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                if let Some(PathResolution::Def(ModuleDef::Variant(x))) =
                     s.resolve_path(&n.path().expect(INTERNAL_ERR))
                 {
                     Some(x)
@@ -405,7 +449,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             record_expr,
             |n| get_name_from_path(n.path()),
             |s, n| {
-                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                if let Some(PathResolution::Def(ModuleDef::Variant(x))) =
                     s.resolve_path(&n.path().expect(INTERNAL_ERR))
                 {
                     Some(x)
@@ -437,7 +481,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             record_expr_field,
             |n| get_name_from_name_ref(n.field_name()),
             |s, n| {
-                if let Some((x, _)) = s.resolve_record_field(n) {
+                if let Some((x, _, _)) = s.resolve_record_field(n) {
                     Some(x)
                 } else {
                     None
@@ -483,7 +527,7 @@ impl<'a> Visitor for RunnerWrapper<'a> {
             tuple_struct_pat,
             |n| get_name_from_path(n.path()),
             |s, n| {
-                if let Some(PathResolution::Def(ModuleDef::EnumVariant(x))) =
+                if let Some(PathResolution::Def(ModuleDef::Variant(x))) =
                     s.resolve_path(&n.path().expect(INTERNAL_ERR))
                 {
                     Some(x)

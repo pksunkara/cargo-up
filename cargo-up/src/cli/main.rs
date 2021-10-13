@@ -1,5 +1,5 @@
 use cargo_metadata::{CargoOpt, MetadataCommand};
-use clap::{AppSettings, Clap};
+use clap::Clap;
 use oclif::finish;
 
 use std::process::exit;
@@ -13,7 +13,7 @@ enum Subcommand {
 }
 
 #[derive(Debug, Clap)]
-#[clap(version, global_setting(AppSettings::VersionlessSubcommands))]
+#[clap(version)]
 struct Opt {
     /// Path to workspace Cargo.toml
     #[clap(long, value_name = "path")]
@@ -27,8 +27,7 @@ struct Opt {
 #[clap(
     name = "cargo-up",
     bin_name = "cargo",
-    version,
-    global_setting(AppSettings::ColoredHelp)
+    version
 )]
 enum Cargo {
     Up(Opt),

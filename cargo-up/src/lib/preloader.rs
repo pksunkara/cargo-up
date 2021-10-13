@@ -1,5 +1,5 @@
 use oclif::term::TERM_ERR;
-use ra_ap_hir::{Adt, AssocItem, Crate, EnumVariant, Field, Function, Module, ModuleDef, Struct};
+use ra_ap_hir::{Adt, AssocItem, Crate, Field, Function, Module, ModuleDef, Struct, Variant};
 use ra_ap_ide_db::RootDatabase;
 
 use std::collections::HashMap as Map;
@@ -9,7 +9,7 @@ pub(crate) struct Preloader {
     pub(crate) methods: Map<Function, String>,
     pub(crate) structs: Map<Struct, String>,
     pub(crate) members: Map<Field, String>,
-    pub(crate) variants: Map<EnumVariant, String>,
+    pub(crate) variants: Map<Variant, String>,
     pub(crate) visited: Vec<String>,
 }
 
@@ -19,14 +19,14 @@ impl Preloader {
             return;
         }
 
-        eprint!("Pre loading {} ... ", name);
+        eprintln!("Preloading {} ... ", name);
         TERM_ERR.flush().unwrap();
 
         let module = krate.root_module(db);
         self.load_module(db, &module, vec![name.to_string()]);
 
         self.visited.push(name.to_string());
-        eprintln!("done");
+        eprintln!("Preloading done");
     }
 
     fn load_module(&mut self, db: &RootDatabase, module: &Module, path: Vec<String>) {
@@ -63,8 +63,8 @@ impl Preloader {
         }
 
         for impl_def in module.impl_defs(db) {
-            let target_ty = impl_def.target_ty(db);
-            let target_trait = impl_def.target_trait(db);
+            let target_ty = impl_def.self_ty(db);
+            let target_trait = impl_def.trait_(db);
 
             match target_ty.as_adt() {
                 // Load struct instance methods

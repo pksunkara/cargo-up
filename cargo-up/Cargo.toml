@@ -23,17 +23,20 @@ thiserror = "1.0"
 oclif = "0.3.0"
 
 # required by lib
-ra_ap_ide_db = { version = "=0.0.16", optional = true }
-ra_ap_hir = { version = "=0.0.16", optional = true }
-ra_ap_text_edit = { version = "=0.0.16", optional = true }
-ra_ap_base_db = { version = "=0.0.16", optional = true }
-ra_ap_rust-analyzer = { version = "=0.0.16", optional = true }
+ra_ap_ide_db = { version = "=0.0.77", optional = true }
+ra_ap_hir = { version = "=0.0.77", optional = true }
+ra_ap_text_edit = { version = "=0.0.77", optional = true }
+ra_ap_base_db = { version = "=0.0.77", optional = true }
+ra_ap_paths = { version = "=0.0.77", optional = true }
+ra_ap_project_model = { version = "=0.0.77", optional = true }
+ra_ap_rust-analyzer = { version = "=0.0.77", optional = true }
 rust-visitor = { path = "./rust-visitor", version = "0.2.1", optional = true }
 paste = { version = "1.0.2", optional = true }
 anyhow = { version = "1.0.34", optional = true }
+log = { version = "0.4.14", optional = true }
 
 # required by bin
-clap = { version = "=3.0.0-beta.2", optional = true }
+clap = { version = "=3.0.0-beta.4", optional = true }
 cargo_metadata = { version = "0.9", optional = true }
 ureq = { version = "1.5.2", optional = true, features = ["tls", "json"], default-features = false }
 serde = { version = "1.0.117", optional = true, features = ["derive"] }
@@ -48,10 +51,13 @@ lib = [
 	"ra_ap_hir",
 	"ra_ap_text_edit",
 	"ra_ap_base_db",
+	"ra_ap_paths",
+	"ra_ap_project_model",
 	"ra_ap_rust-analyzer",
 	"rust-visitor",
 	"paste",
 	"anyhow",
+	"log",
 ]
 cli = [
 	"clap",

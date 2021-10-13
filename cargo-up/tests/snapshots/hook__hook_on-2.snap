@@ -1,8 +1,10 @@
 ---
 source: tests/hook.rs
 expression: err
+
 ---
 
 
-Pre loading upgradee ... done
+Preloading upgradee ... 
+Preloading done
 

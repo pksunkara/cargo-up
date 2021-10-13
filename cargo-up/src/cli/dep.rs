@@ -175,7 +175,6 @@ impl Dep {
                 publish = false
 
                 [dependencies]
-                log = "0.4"
                 env_logger = "0.7"
                 oclif = "0.3"
                 cargo-up = {}

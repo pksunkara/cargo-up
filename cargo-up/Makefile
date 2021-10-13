@@ -10,7 +10,7 @@ clap:
 run:
 	cargo run --features cli --no-default-features up --manifest-path ../fixtures/_run/on/Cargo.toml \
 	dep upgradee \
-	--name upgrader --to-version 0.3.0 --lib-path . \
+	--name upgrader --to-version $(version) --lib-path . \
 	--path ../fixtures/upgrader \
 
 testcase:
