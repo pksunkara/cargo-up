@@ -1,6 +1,6 @@
 use crate::{
     ra_ap_syntax::AstNode,
-    semver::{SemVerError, Version as SemverVersion},
+    semver::{Error as SemVerError, Version as SemverVersion},
     utils::{normalize, Error, INTERNAL_ERR},
     Semantics, Version,
 };

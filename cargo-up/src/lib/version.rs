@@ -3,7 +3,7 @@ use crate::{
         ast::{self, Expr, HasName, NameOrNameRef},
         AstNode,
     },
-    semver::{SemVerError, Version as SemverVersion},
+    semver::{Error as SemVerError, Version as SemverVersion},
     utils::{normalize, INTERNAL_ERR},
     Semantics, Upgrader,
 };

@@ -27,7 +27,7 @@ pub enum Error {
     Upgrading { upgrader: String },
 
     #[error("{0}")]
-    Semver(#[from] semver::ReqParseError),
+    Semver(#[from] semver::Error),
     #[error("{0}")]
     Io(#[from] io::Error),
     #[error("cannot convert command output to string, {0}")]

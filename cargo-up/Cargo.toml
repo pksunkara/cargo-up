@@ -18,7 +18,7 @@ path = "src/lib/mod.rs"
 
 [dependencies]
 # required by lib and bin
-semver = "0.9"
+semver = "1.0.4"
 thiserror = "1.0"
 oclif = "0.3.0"
 
@@ -36,8 +36,8 @@ anyhow = { version = "1.0.34", optional = true }
 log = { version = "0.4.14", optional = true }
 
 # required by bin
-clap = { version = "=3.0.0-rc.4", optional = true, features = ["derive", "cargo"] }
-cargo_metadata = { version = "0.9", optional = true }
+clap = { version = "~3.1.12", optional = true, features = ["derive", "cargo"] }
+cargo_metadata = { version = "0.14.1", optional = true }
 ureq = { version = "1.5.2", optional = true, features = ["tls", "json"], default-features = false }
 serde = { version = "1.0.117", optional = true, features = ["derive"] }
 
@@ -65,7 +65,6 @@ cli = [
 	"ureq",
 	"serde",
 ]
-docs = []
 
 [workspace]
 members = [

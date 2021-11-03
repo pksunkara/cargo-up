@@ -24,11 +24,7 @@ struct Opt {
 }
 
 #[derive(Debug, Parser)]
-#[clap(
-    name = "cargo-up",
-    bin_name = "cargo",
-    version
-)]
+#[clap(name = "cargo-up", bin_name = "cargo", version)]
 enum Cargo {
     Up(Opt),
 }

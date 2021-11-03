@@ -26,6 +26,7 @@ pub struct Dep {
     #[clap(short, long)]
     version: Option<Version>,
 
+    // TODO: hide the following options in prod by doing `cfg(debug_assertions)`
     /// Specify version to upgrade to if upgrader path is given
     #[clap(long, hide = true, requires_all = &["name", "path", "lib-path"])]
     to_version: Option<Version>,
@@ -214,7 +215,11 @@ impl Dep {
                 }}
                 "#,
                 upgrader,
-                metadata.workspace_root.to_string_lossy(),
+                metadata
+                    .workspace_root
+                    .clone()
+                    .into_os_string()
+                    .to_string_lossy(),
                 dep,
                 pkg.version,
                 to_version,
