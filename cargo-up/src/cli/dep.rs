@@ -23,29 +23,35 @@ pub struct Dep {
     dep: String,
 
     /// Specify version of upgrader
-    #[clap(short, long)]
-    version: Option<Version>,
+    #[clap(long)]
+    upgrader_version: Option<Version>,
 
-    // TODO: hide the following options in prod by doing `cfg(debug_assertions)`
-    /// Specify version to upgrade to if upgrader path is given
-    #[clap(long, hide = true, requires_all = &["name", "path", "lib-path"])]
-    to_version: Option<Version>,
+    /// Specify version of the dependency to upgrade to
+    #[clap(long)]
+    dep_version: Option<Version>,
 
-    /// Specify path for upgrader
-    #[clap(long, hide = true, requires_all = &["name", "to-version", "lib-path"])]
-    path: Option<String>,
-
-    /// Specify name for upgrader if upgrader path is given
-    #[clap(long, hide = true, requires_all = &["path", "to-version", "lib-path"], conflicts_with_all = &["version"])]
-    name: Option<String>,
-
-    /// Specify path for cargo-up library
-    #[clap(long, hide = true, requires_all = &["path", "name", "to-version"])]
-    lib_path: Option<String>,
+    /// Specify version of cargo-up library
+    #[clap(long)]
+    lib_version: Option<Version>,
 
     /// Suppress cargo build output
     #[clap(long, hide = true)]
     suppress_cargo_output: bool,
+
+    /// Specify path for upgrader
+    #[cfg(debug_assertions)]
+    #[clap(long, hide = true, requires_all = &["upgrader-name", "dep-version", "lib-path"])]
+    upgrader_path: Option<String>,
+
+    /// Specify name for upgrader if upgrader path is given
+    #[cfg(debug_assertions)]
+    #[clap(long, hide = true, requires_all = &["upgrader-path", "dep-version", "lib-path"], conflicts_with_all = &["upgrader-version", "lib-version"])]
+    upgrader_name: Option<String>,
+
+    /// Specify path for cargo-up library
+    #[cfg(debug_assertions)]
+    #[clap(long, hide = true, requires_all = &["upgrader-name", "upgrader-path", "dep-version"])]
+    lib_path: Option<String>,
 }
 
 fn get_path(path: &Option<String>) -> Result<String> {
@@ -70,17 +76,17 @@ impl Dep {
                 dep: self.dep.clone(),
             })?;
 
-        if let Some(name) = &self.name {
+        if let Some(upgrader_name) = &self.upgrader_name {
             // Use the given options on CLI for local testing
-            let to_version = self.to_version.as_ref().expect(INTERNAL_ERR).to_string();
+            let dep_version = self.dep_version.as_ref().expect(INTERNAL_ERR).to_string();
 
             self.upgrade(
                 &metadata,
                 &dep,
                 pkg,
-                name,
-                &get_path(&self.path)?,
-                &to_version,
+                upgrader_name,
+                &get_path(&self.upgrader_path)?,
+                &dep_version,
                 &get_path(&self.lib_path)?,
             )
         } else {
@@ -96,10 +102,15 @@ impl Dep {
                         upgrader,
                     })?;
 
-            let lib_version = format!(r#""={}""#, crate_version!());
+            let lib_version = format!(
+                r#""={}""#,
+                self.lib_version
+                    .clone()
+                    .unwrap_or_else(|| crate_version!().parse().expect(INTERNAL_ERR))
+            );
             let upgrader_version = format!(
                 r#""={}""#,
-                self.version.as_ref().map_or_else(
+                self.upgrader_version.as_ref().map_or_else(
                     || upgrader_krate.krate.max_version.clone(),
                     |x| x.to_string(),
                 )
@@ -120,11 +131,11 @@ impl Dep {
                 .filter(|x| *x > pkg.version)
                 .collect::<Vec<_>>();
 
-            for to_version in versions {
+            for dep_version in versions {
                 TERM_OUT.write_line(&format!(
                     "Trying to upgrade {} dependency to {} version ...",
                     OUT_YELLOW.apply_to(&self.dep),
-                    OUT_YELLOW.apply_to(&to_version),
+                    OUT_YELLOW.apply_to(&dep_version),
                 ))?;
                 TERM_OUT.flush()?;
 
@@ -134,7 +145,7 @@ impl Dep {
                     pkg,
                     &upgrader_krate.krate.name,
                     &upgrader_version,
-                    &to_version.to_string(),
+                    &dep_version.to_string(),
                     &lib_version,
                 )?;
             }
@@ -148,9 +159,9 @@ impl Dep {
         metadata: &Metadata,
         dep: &String,
         pkg: &Package,
-        upgrader: &str,
+        upgrader_name: &str,
         upgrader_version: &str,
-        to_version: &str,
+        dep_version: &str,
         lib_version: &str,
     ) -> Result {
         // Write the upgrade runner
@@ -181,7 +192,7 @@ impl Dep {
                 cargo-up = {}
                 {} = {}
                 "#,
-                lib_version, upgrader, upgrader_version
+                lib_version, upgrader_name, upgrader_version
             ),
         )?;
 
@@ -214,7 +225,7 @@ impl Dep {
                     finish(result);
                 }}
                 "#,
-                upgrader,
+                upgrader_name,
                 metadata
                     .workspace_root
                     .clone()
@@ -222,7 +233,7 @@ impl Dep {
                     .to_string_lossy(),
                 dep,
                 pkg.version,
-                to_version,
+                dep_version,
             ),
         )?;
 
@@ -231,7 +242,7 @@ impl Dep {
 
         if !err.contains("Finished") {
             return Err(Error::Building {
-                upgrader: upgrader.into(),
+                upgrader: upgrader_name.into(),
             });
         }
 
@@ -244,7 +255,7 @@ impl Dep {
 
         if !status.success() {
             return Err(Error::Upgrading {
-                upgrader: upgrader.into(),
+                upgrader: upgrader_name.into(),
             });
         }
 
