@@ -1,5 +1,5 @@
 use cargo_metadata::{CargoOpt, MetadataCommand};
-use clap::Clap;
+use clap::Parser;
 use oclif::finish;
 
 use std::process::exit;
@@ -7,12 +7,12 @@ use std::process::exit;
 mod dep;
 mod utils;
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 enum Subcommand {
     Dep(dep::Dep),
 }
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 #[clap(version)]
 struct Opt {
     /// Path to workspace Cargo.toml
@@ -23,7 +23,7 @@ struct Opt {
     subcommand: Subcommand,
 }
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 #[clap(
     name = "cargo-up",
     bin_name = "cargo",

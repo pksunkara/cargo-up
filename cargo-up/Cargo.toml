@@ -36,7 +36,7 @@ anyhow = { version = "1.0.34", optional = true }
 log = { version = "0.4.14", optional = true }
 
 # required by bin
-clap = { version = "=3.0.0-beta.4", optional = true }
+clap = { version = "=3.0.0-rc.4", optional = true, features = ["derive", "cargo"] }
 cargo_metadata = { version = "0.9", optional = true }
 ureq = { version = "1.5.2", optional = true, features = ["tls", "json"], default-features = false }
 serde = { version = "1.0.117", optional = true, features = ["derive"] }

@@ -5,7 +5,7 @@ use crate::utils::{
 };
 
 use cargo_metadata::{Metadata, Package};
-use clap::{crate_version, Clap};
+use clap::{crate_version, Parser};
 use oclif::term::{OUT_YELLOW, TERM_OUT};
 use semver::Version;
 
@@ -17,7 +17,7 @@ use std::{
 };
 
 /// Upgrade a specific dependency
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 pub struct Dep {
     /// Dependency name
     dep: String,
@@ -27,23 +27,23 @@ pub struct Dep {
     version: Option<Version>,
 
     /// Specify version to upgrade to if upgrader path is given
-    #[clap(long, hidden = true, requires_all = &["name", "path", "lib-path"])]
+    #[clap(long, hide = true, requires_all = &["name", "path", "lib-path"])]
     to_version: Option<Version>,
 
     /// Specify path for upgrader
-    #[clap(long, hidden = true, requires_all = &["name", "to-version", "lib-path"])]
+    #[clap(long, hide = true, requires_all = &["name", "to-version", "lib-path"])]
     path: Option<String>,
 
     /// Specify name for upgrader if upgrader path is given
-    #[clap(long, hidden = true, requires_all = &["path", "to-version", "lib-path"], conflicts_with_all = &["version"])]
+    #[clap(long, hide = true, requires_all = &["path", "to-version", "lib-path"], conflicts_with_all = &["version"])]
     name: Option<String>,
 
     /// Specify path for cargo-up library
-    #[clap(long, hidden = true, requires_all = &["path", "name", "to-version"])]
+    #[clap(long, hide = true, requires_all = &["path", "name", "to-version"])]
     lib_path: Option<String>,
 
     /// Suppress cargo build output
-    #[clap(long, hidden = true)]
+    #[clap(long, hide = true)]
     suppress_cargo_output: bool,
 }
 
