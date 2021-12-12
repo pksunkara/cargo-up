@@ -4,7 +4,7 @@ version = "0.3.0"
 authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
 edition = "2018"
 description = "Visitor trait for Rust AST based on rust-analyzer"
-repository = "https://github.com/pksunkara/cargo-up"
+repository = "https://github.com/automa-app/cargo-up"
 license = "MIT"
 
 [dependencies]

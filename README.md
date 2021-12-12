@@ -35,21 +35,3 @@ do several sequential version upgrades one after the other in a single run.
 ## Maintainers Workflow
 
 TODO:
-
-## Contributors
-Here is a list of [Contributors](http://github.com/pksunkara/cargo-up/contributors)
-
-### TODO
-
-__I accept pull requests__
-
-## License
-MIT/X11
-
-## Bug Reports
-Report [here](http://github.com/pksunkara/cargo-up/issues).
-
-## Contact
-Pavan Kumar Sunkara (pavan.sss1991@gmail.com)
-
-Follow me on [github](https://github.com/users/follow?target=pksunkara), [twitter](http://twitter.com/pksunkara)

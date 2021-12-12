@@ -4,7 +4,7 @@ version = "0.0.5"
 authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
 edition = "2018"
 description = "Automatic updater for cargo-up library"
-repository = "https://github.com/pksunkara/cargo-up"
+repository = "https://github.com/automa-app/cargo-up"
 license = "MIT"
 
 [dependencies]

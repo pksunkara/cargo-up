@@ -27,7 +27,7 @@ impl CliError for Error {
 }
 
 pub(crate) const INTERNAL_ERR: &'static str =
-    "Internal error message. Please create an issue on https://github.com/pksunkara/cargo-up";
+    "Internal error message. Please create an issue on https://github.com/automa-app/cargo-up";
 
 #[inline]
 pub(crate) fn normalize(name: &str) -> String {

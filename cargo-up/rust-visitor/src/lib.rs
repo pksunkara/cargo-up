@@ -5,7 +5,7 @@ use ra_ap_syntax::{
 };
 
 pub(crate) const INTERNAL_ERR: &'static str =
-    "Internal error message in rust-visitor. Please create an issue on https://github.com/pksunkara/cargo-up";
+    "Internal error message in rust-visitor. Please create an issue on https://github.com/automa-app/cargo-up";
 
 pub use ra_ap_syntax;
 
