@@ -1,6 +1,6 @@
 [package]
 name = "rust-visitor"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
 edition = "2018"
 description = "Visitor trait for Rust AST based on rust-analyzer"

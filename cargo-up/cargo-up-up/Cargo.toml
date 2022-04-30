@@ -1,6 +1,6 @@
 [package]
 name = "cargo-up-up"
-version = "0.0.5"
+version = "0.0.6"
 authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
 edition = "2018"
 description = "Automatic updater for cargo-up library"
@@ -8,4 +8,4 @@ repository = "https://github.com/automa-app/cargo-up"
 license = "MIT"
 
 [dependencies]
-cargo-up = { path = "..", version = "0.0.5" }
+cargo-up = { path = "..", version = "0.0.6" }
