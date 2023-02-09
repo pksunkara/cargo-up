@@ -69,6 +69,7 @@ cli = [
 [workspace]
 members = [
 	"cargo-up-up",
+	"clap_up",
 	"rust-up",
 	"rust-visitor",
 ]
