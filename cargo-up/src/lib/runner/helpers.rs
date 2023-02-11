@@ -4,7 +4,7 @@ use crate::{
     Semantics, Upgrader,
 };
 
-use std::collections::HashMap as Map;
+use std::{collections::HashMap as Map, fmt::Debug};
 
 pub(crate) fn get_name(name_or_name_ref: Option<NameOrNameRef>) -> Option<String> {
     Some(match name_or_name_ref? {
@@ -35,7 +35,8 @@ pub(crate) fn run_hooks<'b, I, N, NG, PG>(
     path_getter: PG,
 ) -> Option<()>
 where
-    I: Eq,
+    I: Eq + Debug,
+    N: Debug,
     NG: Fn(&N) -> Option<String>,
     PG: Fn(&Semantics, &N) -> Option<I>,
 {

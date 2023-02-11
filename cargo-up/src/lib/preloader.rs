@@ -1,3 +1,4 @@
+use log::trace;
 use oclif::term::TERM_ERR;
 use ra_ap_hir::{Adt, AssocItem, Crate, Field, Function, Module, ModuleDef, Struct, Variant};
 use ra_ap_ide_db::RootDatabase;
@@ -27,6 +28,8 @@ impl Preloader {
 
         self.visited.push(name.to_string());
         eprintln!("Preloading done");
+
+        trace!("{:#?}", self);
     }
 
     fn load_module(&mut self, db: &RootDatabase, module: &Module, path: Vec<String>) {
