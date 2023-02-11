@@ -12,7 +12,9 @@ use ra_ap_hir::Crate;
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_paths::AbsPathBuf;
 use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace};
-use ra_ap_rust_analyzer::cli::load_cargo::{load_workspace, LoadCargoConfig};
+use ra_ap_rust_analyzer::cli::load_cargo::{
+    load_workspace, LoadCargoConfig, ProcMacroServerChoice,
+};
 use ra_ap_text_edit::TextEdit;
 use rust_visitor::Visitor;
 
@@ -96,8 +98,7 @@ pub fn run(
 
     let no_progress = &|_| {};
 
-    let mut cargo_config = CargoConfig::default();
-    cargo_config.no_sysroot = true;
+    let cargo_config = CargoConfig::default();
 
     let mut workspace = ProjectWorkspace::load(manifest, &cargo_config, no_progress)?;
     let bs = workspace.run_build_scripts(&cargo_config, no_progress)?;
@@ -105,10 +106,11 @@ pub fn run(
 
     let load_cargo_config = LoadCargoConfig {
         load_out_dirs_from_check: true,
-        with_proc_macro: true,
         prefill_caches: false,
+        with_proc_macro_server: ProcMacroServerChoice::Sysroot,
     };
-    let (host, vfs, _) = load_workspace(workspace, &load_cargo_config).unwrap();
+    let (host, vfs, _) =
+        load_workspace(workspace, &Default::default(), &load_cargo_config).unwrap();
 
     // Preparing running wrapper
     let db = host.raw_database();

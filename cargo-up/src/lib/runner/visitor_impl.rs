@@ -9,7 +9,7 @@ use crate::{
     utils::INTERNAL_ERR,
 };
 
-use ra_ap_hir::{Adt, AssocItem, ModuleDef, PathResolution};
+use ra_ap_hir::{Adt, ModuleDef, PathResolution};
 use rust_visitor::{Options, Visitor};
 
 impl<'a> Visitor for Context<'a> {
@@ -105,7 +105,7 @@ impl<'a> Visitor for Context<'a> {
             path_expr,
             |n| get_name_from_path(n.path()),
             |s, n| {
-                if let Some(PathResolution::AssocItem(AssocItem::Function(x))) =
+                if let Some(PathResolution::Def(ModuleDef::Function(x))) =
                     s.resolve_path(&n.path().expect(INTERNAL_ERR))
                 {
                     Some(x)

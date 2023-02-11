@@ -1,6 +1,6 @@
 [package]
 name = "rust-visitor"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
 edition = "2018"
 description = "Visitor trait for Rust AST based on rust-analyzer"
@@ -8,7 +8,7 @@ repository = "https://github.com/automa-app/cargo-up"
 license = "MIT"
 
 [dependencies]
-ra_ap_syntax = "=0.0.77"
+ra_ap_syntax = { package = "syntax", path = "../../../rust-analyzer/crates/syntax" }
 paste = "1.0.2"
 
 [package.metadata.workspaces]
