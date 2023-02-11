@@ -96,8 +96,7 @@ pub fn run(
 
     let no_progress = &|_| {};
 
-    let mut cargo_config = CargoConfig::default();
-    cargo_config.no_sysroot = true;
+    let cargo_config = CargoConfig::default();
 
     let mut workspace = ProjectWorkspace::load(manifest, &cargo_config, no_progress)?;
     let bs = workspace.run_build_scripts(&cargo_config, no_progress)?;
@@ -108,7 +107,8 @@ pub fn run(
         with_proc_macro: true,
         prefill_caches: false,
     };
-    let (host, vfs, _) = load_workspace(workspace, &load_cargo_config).unwrap();
+    let (host, vfs, _) =
+        load_workspace(workspace, &Default::default(), &load_cargo_config).unwrap();
 
     // Preparing running wrapper
     let db = host.raw_database();
