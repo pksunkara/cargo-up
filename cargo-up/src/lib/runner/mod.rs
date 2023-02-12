@@ -11,7 +11,7 @@ use ra_ap_base_db::{FileId, SourceDatabase, SourceDatabaseExt};
 use ra_ap_hir::Crate;
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
 use ra_ap_paths::AbsPathBuf;
-use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace};
+use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace, RustcSource};
 use ra_ap_rust_analyzer::cli::load_cargo::{
     load_workspace, LoadCargoConfig, ProcMacroServerChoice,
 };
@@ -98,7 +98,8 @@ pub fn run(
 
     let no_progress = &|_| {};
 
-    let cargo_config = CargoConfig::default();
+    let mut cargo_config = CargoConfig::default();
+    cargo_config.sysroot = Some(RustcSource::Discover);
 
     let mut workspace = ProjectWorkspace::load(manifest, &cargo_config, no_progress)?;
     let bs = workspace.run_build_scripts(&cargo_config, no_progress)?;

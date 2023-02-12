@@ -1,0 +1,11 @@
+---
+source: tests/utils.rs
+expression: file_content
+
+---
+use upgradee::Struct;
+
+fn main() {
+    Struct::default().print_err();
+}
+

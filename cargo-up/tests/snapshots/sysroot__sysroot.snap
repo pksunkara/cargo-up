@@ -1,0 +1,6 @@
+---
+source: tests/sysroot.rs
+expression: out
+
+---
+

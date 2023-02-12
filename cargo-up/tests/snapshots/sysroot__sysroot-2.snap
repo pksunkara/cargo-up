@@ -1,0 +1,10 @@
+---
+source: tests/sysroot.rs
+expression: err
+
+---
+
+
+Preloading upgradee ... 
+Preloading done
+
