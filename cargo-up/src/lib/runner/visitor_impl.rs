@@ -174,7 +174,7 @@ impl<'a> Visitor for Context<'a> {
             &version.hook_field_expr_on,
             field_expr,
             |n| get_name_from_name_ref(n.name_ref()),
-            |s, n| s.resolve_field(n),
+            |s, n| s.resolve_field(n).and_then(|x| x.left()),
         );
     }
 
@@ -272,7 +272,7 @@ impl<'a> Visitor for Context<'a> {
             &version.hook_record_pat_field_on,
             record_pat_field,
             |n| get_name(n.field_name()),
-            |s, n| s.resolve_record_pat_field(n),
+            |s, n| s.resolve_record_pat_field(n).map(|x| x.0),
         );
     }
 

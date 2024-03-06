@@ -23,7 +23,7 @@ impl Preloader {
         eprintln!("Preloading {} ... ", name);
         TERM_ERR.flush().unwrap();
 
-        let module = krate.root_module(db);
+        let module = krate.root_module();
         self.load_module(db, &module, vec![name.to_string()]);
 
         self.visited.push(name.to_string());
@@ -39,7 +39,7 @@ impl Preloader {
                 ModuleDef::Adt(Adt::Struct(s)) => {
                     self.structs.insert(s.clone(), path.join("::"));
 
-                    let name = format!("{}::{}", path.join("::"), s.name(db));
+                    let name = format!("{}::{}", path.join("::"), s.name(db).display(db));
 
                     for field in s.fields(db) {
                         self.members.insert(field, name.clone());
@@ -47,7 +47,7 @@ impl Preloader {
                 }
                 // Load union memebrs
                 ModuleDef::Adt(Adt::Union(u)) => {
-                    let name = format!("{}::{}", path.join("::"), u.name(db));
+                    let name = format!("{}::{}", path.join("::"), u.name(db).display(db));
 
                     for field in u.fields(db) {
                         self.members.insert(field, name.clone());
@@ -55,7 +55,7 @@ impl Preloader {
                 }
                 // Load enum variants
                 ModuleDef::Adt(Adt::Enum(e)) => {
-                    let name = format!("{}::{}", path.join("::"), e.name(db));
+                    let name = format!("{}::{}", path.join("::"), e.name(db).display(db));
 
                     for variant in e.variants(db) {
                         self.variants.insert(variant, name.clone());
@@ -72,7 +72,7 @@ impl Preloader {
             match target_ty.as_adt() {
                 // Load struct instance methods
                 Some(Adt::Struct(s)) if target_trait.is_none() => {
-                    let name = format!("{}::{}", path.join("::"), s.name(db));
+                    let name = format!("{}::{}", path.join("::"), s.name(db).display(db));
 
                     for assoc_item in impl_def.items(db) {
                         if let AssocItem::Function(f) = assoc_item {
@@ -82,7 +82,7 @@ impl Preloader {
                 }
                 // Load enum instance methods
                 Some(Adt::Enum(e)) if target_trait.is_none() => {
-                    let name = format!("{}::{}", path.join("::"), e.name(db));
+                    let name = format!("{}::{}", path.join("::"), e.name(db).display(db));
 
                     for assoc_item in impl_def.items(db) {
                         if let AssocItem::Function(f) = assoc_item {
@@ -92,7 +92,7 @@ impl Preloader {
                 }
                 // Load union instance methods
                 Some(Adt::Union(u)) if target_trait.is_none() => {
-                    let name = format!("{}::{}", path.join("::"), u.name(db));
+                    let name = format!("{}::{}", path.join("::"), u.name(db).display(db));
 
                     for assoc_item in impl_def.items(db) {
                         if let AssocItem::Function(f) = assoc_item {
@@ -107,7 +107,7 @@ impl Preloader {
         for child in module.children(db) {
             if let Some(name) = child.name(db) {
                 let mut path = path.clone();
-                path.push(format!("{}", name));
+                path.push(format!("{}", name.display(db)));
 
                 self.load_module(db, &child, path);
             }

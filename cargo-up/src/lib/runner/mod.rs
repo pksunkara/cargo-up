@@ -10,11 +10,9 @@ use oclif::term::{OUT_YELLOW, TERM_OUT};
 use ra_ap_base_db::{FileId, SourceDatabase, SourceDatabaseExt};
 use ra_ap_hir::Crate;
 use ra_ap_ide_db::symbol_index::SymbolsDatabase;
+use ra_ap_load_cargo::{load_workspace, LoadCargoConfig, ProcMacroServerChoice};
 use ra_ap_paths::AbsPathBuf;
-use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace, RustcSource};
-use ra_ap_rust_analyzer::cli::load_cargo::{
-    load_workspace, LoadCargoConfig, ProcMacroServerChoice,
-};
+use ra_ap_project_model::{CargoConfig, ProjectManifest, ProjectWorkspace, RustLibSource};
 use ra_ap_text_edit::TextEdit;
 use rust_visitor::Visitor;
 
@@ -99,7 +97,7 @@ pub fn run(
     let no_progress = &|_| {};
 
     let mut cargo_config = CargoConfig::default();
-    cargo_config.sysroot = Some(RustcSource::Discover);
+    cargo_config.sysroot = Some(RustLibSource::Discover);
 
     let mut workspace = ProjectWorkspace::load(manifest, &cargo_config, no_progress)?;
     let bs = workspace.run_build_scripts(&cargo_config, no_progress)?;
@@ -154,7 +152,7 @@ pub fn run(
             })
             .filter_map(|path| path.as_path())
             .any(|path| {
-                debug!("Checking if path in workspace: {}", path.display());
+                debug!("Checking if path in workspace: {}", path);
                 path.as_ref().starts_with(root)
             })
         {
@@ -163,7 +161,7 @@ pub fn run(
 
         for file_id in source_root.iter() {
             let file = vfs.file_path(file_id);
-            info!("Walking: {}", file.as_path().expect(INTERNAL_ERR).display());
+            info!("Walking: {}", file.as_path().expect(INTERNAL_ERR));
 
             let source_file = context.semantics.parse(file_id);
             trace!("Syntax: {:#?}", source_file.syntax());

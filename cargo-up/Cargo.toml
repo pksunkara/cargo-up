@@ -1,16 +1,16 @@
 [package]
-name = "cargo-up"
-version = "0.0.6"
-authors = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
-edition = "2018"
+authors     = ["Pavan Kumar Sunkara <pavan.sss1991@gmail.com>"]
 description = "Upgrade your dependencies by automatically fixing your code"
-repository = "https://github.com/automa-app/cargo-up"
-license = "MIT"
+edition     = "2018"
+license     = "MIT"
+name        = "cargo-up"
+repository  = "https://github.com/automa-app/cargo-up"
+version     = "0.0.6"
 
 [[bin]]
-name = "cargo-up"
-path = "src/cli/main.rs"
-required-features = ["cli"] # remove the need for this
+name              = "cargo-up"
+path              = "src/cli/main.rs"
+required-features = ["cli"]           # remove the need for this
 
 [lib]
 name = "cargo_up"
@@ -18,65 +18,55 @@ path = "src/lib/mod.rs"
 
 [dependencies]
 # required by lib and bin
-semver = "1.0.4"
+oclif     = "0.3.0"
+semver    = "1.0.4"
 thiserror = "1.0"
-oclif = "0.3.0"
 
 # required by lib
-ra_ap_ide_db = { package = "ide-db", path = "../../rust-analyzer/crates/ide-db", optional = true }
-ra_ap_hir = { package = "hir", path = "../../rust-analyzer/crates/hir", optional = true }
-ra_ap_text_edit = { package = "text-edit", path = "../../rust-analyzer/crates/text-edit", optional = true }
-ra_ap_base_db = { package = "base-db", path = "../../rust-analyzer/crates/base-db", optional = true }
-ra_ap_paths = { package = "paths", path = "../../rust-analyzer/crates/paths", optional = true }
-ra_ap_project_model = { package = "project-model", path = "../../rust-analyzer/crates/project-model", optional = true }
-ra_ap_rust-analyzer = { package = "rust-analyzer", path = "../../rust-analyzer/crates/rust-analyzer", optional = true }
-rust-visitor = { path = "./rust-visitor", version = "0.4.0", optional = true }
-paste = { version = "1.0.2", optional = true }
-anyhow = { version = "1.0.34", optional = true }
-log = { version = "0.4.14", optional = true }
+anyhow              = { version = "1.0.34", optional = true }
+log                 = { version = "0.4.14", optional = true }
+paste               = { version = "1.0.2", optional = true }
+ra_ap_base_db       = { version = "=0.0.203", optional = true }
+ra_ap_hir           = { version = "=0.0.203", optional = true }
+ra_ap_ide_db        = { version = "=0.0.203", optional = true }
+ra_ap_load-cargo		= { version = "=0.0.203", optional = true }
+ra_ap_paths         = { version = "=0.0.203", optional = true }
+ra_ap_project_model = { version = "=0.0.203", optional = true }
+ra_ap_text_edit     = { version = "=0.0.203", optional = true }
+rust-visitor        = { path = "./rust-visitor", version = "0.4.0", optional = true }
 
 # required by bin
-clap = { version = "~3.1.12", optional = true, features = ["derive", "cargo"] }
 cargo_metadata = { version = "0.14.1", optional = true }
-ureq = { version = "1.5.2", optional = true, features = ["tls", "json"], default-features = false }
-serde = { version = "1.0.117", optional = true, features = ["derive"] }
+clap           = { version = "~3.1.12", optional = true, features = ["cargo", "derive"] }
+serde          = { version = "1.0.117", optional = true, features = ["derive"] }
+ureq           = { version = "1.5.2", optional = true, features = ["json", "tls"], default-features = false }
 
 [profile.release]
 lto = "thin"
 
 [features]
+cli = ["cargo_metadata", "clap", "serde", "ureq"]
 default = ["lib"]
 lib = [
-	"ra_ap_ide_db",
-	"ra_ap_hir",
-	"ra_ap_text_edit",
-	"ra_ap_base_db",
-	"ra_ap_paths",
-	"ra_ap_project_model",
-	"ra_ap_rust-analyzer",
-	"rust-visitor",
-	"paste",
 	"anyhow",
 	"log",
-]
-cli = [
-	"clap",
-	"cargo_metadata",
-	"ureq",
-	"serde",
+	"paste",
+	"ra_ap_base_db",
+	"ra_ap_hir",
+	"ra_ap_ide_db",
+	"ra_ap_load-cargo",
+	"ra_ap_paths",
+	"ra_ap_project_model",
+	"ra_ap_text_edit",
+	"rust-visitor",
 ]
 
 [workspace]
-members = [
-	"cargo-up-up",
-	"clap_up",
-	"rust-up",
-	"rust-visitor",
-]
+members = ["cargo-up-up", "clap_up", "rust-up", "rust-visitor"]
 
 [dev-dependencies]
-insta = "0.16"
-assert_cmd = "1.0"
+assert_cmd  = "1.0"
+insta       = "0.16"
 serial_test = "0.5.1"
 
 [workspace.metadata.workspaces]
